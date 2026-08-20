@@ -52,4 +52,34 @@ public class VehicleService {
 
         return VehicleResponseDTO.fromEntity(saved);
     }
+    @Transactional
+    public VehicleResponseDTO updateVehicle(UUID id, VehicleRequestDTO request) {
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new VehicleNotFoundException(id));
+
+        String normalizedPlate = request.licensePlate().toUpperCase();
+
+        if (!normalizedPlate.equals(vehicle.getLicensePlate())
+                && vehicleRepository.existsByLicensePlate(normalizedPlate)) {
+            throw new LicensePlateAlreadyExistsException(normalizedPlate);
+        }
+
+        vehicle.setLicensePlate(normalizedPlate);
+        vehicle.setType(request.type());
+        vehicle.setModel(request.model());
+        vehicle.setYear(request.year());
+
+        Vehicle updated = vehicleRepository.save(vehicle);
+
+        return VehicleResponseDTO.fromEntity(updated);
+    }
+
+    @Transactional
+    public void deactivateVehicle(UUID id) {
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new VehicleNotFoundException(id));
+
+        vehicle.setEnabled(false);
+        vehicleRepository.save(vehicle);
+    }
 }

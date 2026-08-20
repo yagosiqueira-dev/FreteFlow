@@ -30,6 +30,19 @@ public class VehicleController {
 
         return ResponseEntity.created(location).body(created);
     }
+    @PutMapping("/{id}")
+    public ResponseEntity<VehicleResponseDTO> update(
+            @PathVariable UUID id, @Valid @RequestBody VehicleRequestDTO request) {
+
+        VehicleResponseDTO updated = vehicleService.updateVehicle(id, request);
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deactivate(@PathVariable UUID id) {
+        vehicleService.deactivateVehicle(id);
+        return ResponseEntity.noContent().build();
+    }
 
     @GetMapping
     public ResponseEntity<Page<VehicleResponseDTO>> list(
