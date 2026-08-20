@@ -1,8 +1,8 @@
 package br.com.freteflow.controller;
 
-import br.com.freteflow.dto.LoginDTO;
-import br.com.freteflow.dto.LoginResponseDTO;
-import br.com.freteflow.dto.RegisterDTO;
+import br.com.freteflow.dto.auth.LoginDTO;
+import br.com.freteflow.dto.auth.LoginResponseDTO;
+import br.com.freteflow.dto.auth.RegisterDTO;
 import br.com.freteflow.entity.User;
 import br.com.freteflow.security.TokenService;
 import br.com.freteflow.service.UserService;
