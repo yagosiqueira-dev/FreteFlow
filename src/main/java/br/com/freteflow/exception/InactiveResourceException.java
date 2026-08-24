@@ -1,7 +1,10 @@
 package br.com.freteflow.exception;
 
-public class InactiveResourceException extends RuntimeException {
-  public InactiveResourceException(String message) {
-    super(message);
-  }
+import org.springframework.http.HttpStatus;
+
+public class InactiveResourceException extends BusinessException {
+
+    public InactiveResourceException(String resourceName) {
+        super(resourceName + " está desativado(a) e não pode ser usado(a) em um novo frete", HttpStatus.CONFLICT);
+    }
 }

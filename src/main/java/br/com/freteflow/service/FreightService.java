@@ -7,10 +7,7 @@ import br.com.freteflow.entity.Freight;
 import br.com.freteflow.entity.FreightStatus;
 import br.com.freteflow.entity.Store;
 import br.com.freteflow.entity.Vehicle;
-import br.com.freteflow.exception.DriverNotFoundException;
-import br.com.freteflow.exception.FreightNotFoundException;
-import br.com.freteflow.exception.StoreNotFoundException;
-import br.com.freteflow.exception.VehicleNotFoundException;
+import br.com.freteflow.exception.*;
 import br.com.freteflow.repository.DriverRepository;
 import br.com.freteflow.repository.FreightRepository;
 import br.com.freteflow.repository.StoreRepository;
@@ -37,11 +34,23 @@ public class FreightService {
         Driver driver = driverRepository.findById(request.driverId())
                 .orElseThrow(() -> new DriverNotFoundException(request.driverId()));
 
+        if (!driver.isEnabled()) {
+            throw new InactiveResourceException("Motorista");
+        }
+
         Vehicle vehicle = vehicleRepository.findById(request.vehicleId())
                 .orElseThrow(() -> new VehicleNotFoundException(request.vehicleId()));
 
+        if (!vehicle.isEnabled()) {
+            throw new InactiveResourceException("Veículo");
+        }
+
         Store store = storeRepository.findById(request.storeId())
                 .orElseThrow(() -> new StoreNotFoundException(request.storeId()));
+
+        if (!store.isEnabled()) {
+            throw new InactiveResourceException("Loja");
+        }
 
         Freight freight = Freight.builder()
                 .driver(driver)
@@ -100,6 +109,10 @@ public class FreightService {
     public FreightResponseDTO updateStatus(UUID id, FreightStatus newStatus) {
         Freight freight = freightRepository.findById(id)
                 .orElseThrow(() -> new FreightNotFoundException(id));
+
+        if (!freight.getStatus().canTransitionTo(newStatus)) {
+            throw new InvalidFreightStatusTransitionException(freight.getStatus(), newStatus);
+        }
 
         freight.setStatus(newStatus);
         Freight updated = freightRepository.save(freight);
