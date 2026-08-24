@@ -1,0 +1,12 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+api:
+  security:
+    token:
+      secret: test-secret-key-for-integration-tests-only
