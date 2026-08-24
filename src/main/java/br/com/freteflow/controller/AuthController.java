@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import br.com.freteflow.entity.UserRole;
 
 @RestController
 @RequestMapping("/auth")
@@ -40,7 +41,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<Void> register(@RequestBody RegisterDTO data) {
-        userService.createUser(data.name(), data.email(), data.password(), data.role());
+        userService.createUser(data.name(), data.email(), data.password(), UserRole.OPERATOR);
         return ResponseEntity.ok().build();
     }
 }

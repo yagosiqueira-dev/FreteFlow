@@ -82,4 +82,14 @@ public class DriverService {
         driver.setEnabled(false);
         driverRepository.save(driver);
     }
+    @Transactional
+    public DriverResponseDTO activateDriver(UUID id) {
+        Driver driver = driverRepository.findById(id)
+                .orElseThrow(() -> new DriverNotFoundException(id));
+
+        driver.setEnabled(true);
+        Driver updated = driverRepository.save(driver);
+
+        return DriverResponseDTO.fromEntity(updated);
+    }
 }

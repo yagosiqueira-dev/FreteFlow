@@ -82,4 +82,14 @@ public class VehicleService {
         vehicle.setEnabled(false);
         vehicleRepository.save(vehicle);
     }
+    @Transactional
+    public VehicleResponseDTO activateVehicle(UUID id) {
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new VehicleNotFoundException(id));
+
+        vehicle.setEnabled(true);
+        Vehicle updated = vehicleRepository.save(vehicle);
+
+        return VehicleResponseDTO.fromEntity(updated);
+    }
 }

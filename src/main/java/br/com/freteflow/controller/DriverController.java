@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -22,6 +23,7 @@ public class DriverController {
     private final DriverService driverService;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DriverResponseDTO> create(@Valid @RequestBody DriverRequestDTO request) {
         DriverResponseDTO created = driverService.createDriver(request);
         URI location = URI.create("/api/drivers/" + created.id());
@@ -43,6 +45,7 @@ public class DriverController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<DriverResponseDTO> update(
             @PathVariable UUID id, @Valid @RequestBody DriverRequestDTO request) {
 
@@ -51,8 +54,15 @@ public class DriverController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deactivate(@PathVariable UUID id) {
         driverService.deactivateDriver(id);
         return ResponseEntity.noContent().build();
+    }
+    @PatchMapping("/{id}/activate")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<DriverResponseDTO> activate(@PathVariable UUID id) {
+        DriverResponseDTO activated = driverService.activateDriver(id);
+        return ResponseEntity.ok(activated);
     }
 }
