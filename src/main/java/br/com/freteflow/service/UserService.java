@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import br.com.freteflow.dto.user.UserResponseDTO;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -31,5 +33,16 @@ public class UserService {
                 .build();
 
         return userRepository.save(user);
+    }
+    @Transactional
+    public UserResponseDTO promoteToAdmin(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado. ID: " + id));
+
+        user.setRole(UserRole.ADMIN);
+
+        User updated = userRepository.save(user);
+
+        return UserResponseDTO.fromEntity(updated);
     }
 }
