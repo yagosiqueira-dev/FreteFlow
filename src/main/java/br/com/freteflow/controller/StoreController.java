@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -22,6 +23,7 @@ public class StoreController {
     private final StoreService storeService;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<StoreResponseDTO> create(@Valid @RequestBody StoreRequestDTO request) {
         StoreResponseDTO created = storeService.createStore(request);
         URI location = URI.create("/api/stores/" + created.id());
@@ -43,6 +45,7 @@ public class StoreController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<StoreResponseDTO> update(
             @PathVariable UUID id, @Valid @RequestBody StoreRequestDTO request) {
 
@@ -51,11 +54,13 @@ public class StoreController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deactivate(@PathVariable UUID id) {
         storeService.deactivateStore(id);
         return ResponseEntity.noContent().build();
     }
     @PatchMapping("/{id}/activate")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<StoreResponseDTO> activate(@PathVariable UUID id) {
         StoreResponseDTO activated = storeService.activateStore(id);
         return ResponseEntity.ok(activated);
