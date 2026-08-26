@@ -32,9 +32,17 @@ public class DriverController {
 
     @GetMapping
     public ResponseEntity<Page<DriverResponseDTO>> list(
+            @RequestParam(required = false) String name,
             @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
 
-        Page<DriverResponseDTO> drivers = driverService.listDrivers(pageable);
+        Page<DriverResponseDTO> drivers;
+
+        if (name != null && !name.trim().isEmpty()) {
+            drivers = driverService.searchByName(name, pageable);
+        } else {
+            drivers = driverService.listDrivers(pageable);
+        }
+
         return ResponseEntity.ok(drivers);
     }
 

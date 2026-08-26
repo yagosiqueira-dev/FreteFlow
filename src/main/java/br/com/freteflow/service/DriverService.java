@@ -46,6 +46,12 @@ public class DriverService {
     }
 
     @Transactional(readOnly = true)
+    public Page<DriverResponseDTO> searchByName(String name, Pageable pageable) {
+        return driverRepository.findByNameContainingIgnoreCase(name, pageable)
+                .map(DriverResponseDTO::fromEntity);
+    }
+
+    @Transactional(readOnly = true)
     public DriverResponseDTO findById(UUID id) {
         Driver driver = driverRepository.findById(id)
                 .orElseThrow(() -> new DriverNotFoundException(id));

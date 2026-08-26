@@ -25,7 +25,7 @@ class DriverControllerIntegrationTest extends AbstractIntegrationTest {
                         .contentType("application/json")
                         .content(payload))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.cpf").value("11144477735"))
+                .andExpect(jsonPath("$.cpf").value("***.444.777-**"))
                 .andExpect(jsonPath("$.enabled").value(true));
     }
 
@@ -163,5 +163,30 @@ class DriverControllerIntegrationTest extends AbstractIntegrationTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.enabled").value(true));
+    }
+
+    @Test
+    void shouldSearchDriversByNameAndReturnMaskedData() throws Exception {
+        String token = createAdminAndGetToken("admin-search-driver@freteflow.com");
+
+        String payload = """
+                {
+                  "name": "Carlos Silva",
+                  "phone": "11987654321",
+                  "cpf": "123.456.789-09"
+                }
+                """;
+
+        mockMvc.perform(post("/api/drivers")
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .content(payload));
+
+        mockMvc.perform(get("/api/drivers?name=CaRlOs SiLvA")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].name").value("Carlos Silva"))
+                .andExpect(jsonPath("$.content[0].cpf").value("***.456.789-**"))
+                .andExpect(jsonPath("$.content[0].phone").value("(11) *****-4321"));
     }
 }
