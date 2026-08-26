@@ -88,11 +88,23 @@ public class FreightService {
         Driver driver = driverRepository.findById(request.driverId())
                 .orElseThrow(() -> new DriverNotFoundException(request.driverId()));
 
+        if (!driver.isEnabled()) {
+            throw new InactiveResourceException("Motorista");
+        }
+
         Vehicle vehicle = vehicleRepository.findById(request.vehicleId())
                 .orElseThrow(() -> new VehicleNotFoundException(request.vehicleId()));
 
+        if (!vehicle.isEnabled()) {
+            throw new InactiveResourceException("Veículo");
+        }
+
         Store store = storeRepository.findById(request.storeId())
                 .orElseThrow(() -> new StoreNotFoundException(request.storeId()));
+
+        if (!store.isEnabled()) {
+            throw new InactiveResourceException("Loja");
+        }
 
         freight.setDriver(driver);
         freight.setVehicle(vehicle);
