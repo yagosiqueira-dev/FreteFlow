@@ -23,10 +23,9 @@ public class ReportController {
     public ResponseEntity<BiWeeklyReportDTO> getBiWeeklyReport(
             @PathVariable UUID driverId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam String driverName) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 
-        BiWeeklyReportDTO report = reportService.generateBiWeeklyReport(driverId, startDate, endDate, driverName);
+        BiWeeklyReportDTO report = reportService.generateBiWeeklyReport(driverId, startDate, endDate);
         return ResponseEntity.ok(report);
     }
 }

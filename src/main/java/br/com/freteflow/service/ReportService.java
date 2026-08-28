@@ -2,6 +2,9 @@ package br.com.freteflow.service;
 
 import br.com.freteflow.dto.report.BiWeeklyReportDTO;
 import br.com.freteflow.dto.report.FreightReportItemDTO;
+import br.com.freteflow.entity.Driver;
+import br.com.freteflow.repository.DriverRepository;
+import br.com.freteflow.exception.DriverNotFoundException;
 import br.com.freteflow.repository.FreightRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,9 +21,12 @@ import java.util.UUID;
 public class ReportService {
 
     private final FreightRepository freightRepository;
+    private final DriverRepository driverRepository;
 
     @Transactional(readOnly = true)
-    public BiWeeklyReportDTO generateBiWeeklyReport(UUID driverId, LocalDate startDate, LocalDate endDate, String driverName) {
+    public BiWeeklyReportDTO generateBiWeeklyReport(UUID driverId, LocalDate startDate, LocalDate endDate) {
+        Driver driver = driverRepository.findById(driverId)
+                .orElseThrow(() -> new DriverNotFoundException(driverId));
 
         LocalDateTime startDateTime = startDate.atStartOfDay();
         LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
@@ -40,6 +46,6 @@ public class ReportService {
                 .map(FreightReportItemDTO::value)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        return new BiWeeklyReportDTO(startDate, endDate, driverName, total, items);
+        return new BiWeeklyReportDTO(startDate, endDate, driver.getName(), total, items);
     }
 }

@@ -3,6 +3,7 @@ package br.com.freteflow.service;
 import br.com.freteflow.entity.User;
 import br.com.freteflow.entity.UserRole;
 import br.com.freteflow.exception.EmailAlreadyExistsException;
+import br.com.freteflow.exception.UserNotFoundException;
 import br.com.freteflow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -37,7 +38,7 @@ public class UserService {
     @Transactional
     public UserResponseDTO promoteToAdmin(UUID id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado. ID: " + id));
+                .orElseThrow(() -> new UserNotFoundException(id));
 
         user.setRole(UserRole.ADMIN);
 
