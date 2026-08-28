@@ -2,6 +2,8 @@ package br.com.freteflow.exception;
 
 import br.com.freteflow.dto.error.ErrorResponseDTO;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -11,19 +13,15 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-
-
 import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponseDTO> handleBusinessException(
@@ -38,6 +36,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(ex.getStatus()).body(body);
     }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponseDTO> handleBadCredentialsException(
             BadCredentialsException ex, HttpServletRequest request) {
@@ -51,6 +50,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
+
     @ExceptionHandler({AccessDeniedException.class, AuthorizationDeniedException.class})
     public ResponseEntity<Object> handleAccessDeniedException(RuntimeException ex, HttpServletRequest request) {
 
@@ -84,19 +84,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(body);
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponseDTO> handleGenericException(
-            Exception ex, HttpServletRequest request) {
-
-        ErrorResponseDTO body = ErrorResponseDTO.of(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                "Ocorreu um erro inesperado. Tente novamente mais tarde.",
-                request.getRequestURI()
-        );
-
-        return ResponseEntity.internalServerError().body(body);
-    }
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponseDTO> handleTypeMismatchException(
             MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
@@ -114,5 +101,22 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponseDTO> handleGenericException(
+            Exception ex, HttpServletRequest request) {
+
+
+        log.error("Erro inesperado ao processar {} {}", request.getMethod(), request.getRequestURI(), ex);
+
+        ErrorResponseDTO body = ErrorResponseDTO.of(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+                "Ocorreu um erro inesperado. Tente novamente mais tarde.",
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.internalServerError().body(body);
     }
 }

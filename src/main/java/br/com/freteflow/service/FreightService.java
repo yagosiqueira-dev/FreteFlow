@@ -58,7 +58,7 @@ public class FreightService {
                 .store(store)
                 .freightValue(store.getDefaultValue())
                 .freightDate(request.freightDate())
-                .status(FreightStatus.PENDING)
+                .status(FreightStatus.DELIVERED)
                 .build();
 
         Freight saved = freightRepository.save(freight);

@@ -1,0 +1,16 @@
+INSERT INTO stores (name, origin, destination, default_value, enabled, created_at, updated_at) VALUES
+('Loja Fictícia 1', 'CD Itaquá', 'Destino 1', 160.00, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Loja Fictícia 2', 'C  D Itaquá', 'Destino 2', 170.00, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Loja Fictícia 3', 'CD Itaquá', 'Destino 3', 180.00, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Loja Fictícia 4', 'CD Itaquá', 'Destino 4', 190.00, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Loja Fictícia 5', 'CD Itaquá', 'Destino 5', 150.00, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Loja Fictícia 6', 'CD Itaquá', 'Destino 6', 160.00, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Loja Fictícia 7', 'CD Itaquá', 'Destino 7', 170.00, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Loja Fictícia 8', 'CD Itaquá', 'Destino 8', 180.00, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Loja Fictícia 9', 'CD Itaquá', 'Destino 9', 190.00, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Loja Fictícia 10', 'CD Itaquá', 'Destino 10', 150.00, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Loja Fictícia 11', 'CD Itaquá', 'Destino 11', 160.00, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Loja Fictícia 12', 'CD Itaquá', 'Destino 12', 170.00, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Loja Fictícia 13', 'CD Itaquá', 'Destino 13', 180.00, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Loja Fictícia 14', 'CD Itaquá', 'Destino 14', 190.00, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Loja Fictícia 15', 'CD Itaquá', 'Destino 15', 150.00, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
