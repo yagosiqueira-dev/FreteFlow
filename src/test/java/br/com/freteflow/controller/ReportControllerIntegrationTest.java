@@ -86,6 +86,8 @@ class ReportControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.driverName").value("Motorista Teste"))
                 .andExpect(jsonPath("$.totalAmount").value(500.00))
                 .andExpect(jsonPath("$.freights").isArray())
+                .andExpect(jsonPath("$.freights[0].loadingLocation").value("São Paulo"))
+                .andExpect(jsonPath("$.freights[0].fullRoute").value("Carapicuiba"))
                 .andExpect(jsonPath("$.freights[0].value").value(500.00));
     }
 }

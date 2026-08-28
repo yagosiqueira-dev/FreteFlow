@@ -36,8 +36,8 @@ public class ReportService {
         List<FreightReportItemDTO> items = freights.stream()
                 .map(f -> new FreightReportItemDTO(
                         f.getFreightDate().toLocalDate(),
-                        f.getStore().getName(),
-                        f.getStore().getName(),
+                        f.getStore().getOrigin(),
+                        f.getStore().getDestination(),
                         f.getFreightValue()
                 ))
                 .toList();
