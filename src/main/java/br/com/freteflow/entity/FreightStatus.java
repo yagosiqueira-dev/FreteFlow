@@ -12,7 +12,8 @@ public enum FreightStatus {
         return switch (this) {
             case PENDING -> newStatus == IN_PROGRESS || newStatus == CANCELED;
             case IN_PROGRESS -> newStatus == DELIVERED || newStatus == CANCELED;
-            case DELIVERED, CANCELED -> false;
+            case DELIVERED -> newStatus == CANCELED;
+            case CANCELED -> false;
         };
     }
 }

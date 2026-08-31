@@ -76,7 +76,7 @@ class FreightControllerIntegrationTest extends AbstractIntegrationTest {
                         .contentType(APPLICATION_JSON)
                         .content(freightRequestJson(driver.getId(), vehicle.getId(), store.getId(), now())))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.status").value("PENDING"))
+                .andExpect(jsonPath("$.status").value("DELIVERED"))
                 .andExpect(jsonPath("$.freightValue").value(450.00))
                 .andExpect(jsonPath("$.driverId").value(driver.getId().toString()))
                 .andExpect(jsonPath("$.vehicleId").value(vehicle.getId().toString()))
@@ -249,25 +249,7 @@ class FreightControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void shouldTransitionStatus_pendingToInProgressToDelivered() throws Exception {
-        String token = createAdminAndGetToken("admin-freight-transition-1@test.com");
-        UUID freightId = createFreightAndGetId(token, "Loja Transition 1");
-
-        mockMvc.perform(patch("/api/freights/{id}/status", freightId)
-                        .header("Authorization", "Bearer " + token)
-                        .param("status", "IN_PROGRESS"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("IN_PROGRESS"));
-
-        mockMvc.perform(patch("/api/freights/{id}/status", freightId)
-                        .header("Authorization", "Bearer " + token)
-                        .param("status", "DELIVERED"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("DELIVERED"));
-    }
-
-    @Test
-    void shouldTransitionStatus_pendingToCanceled() throws Exception {
+    void shouldTransitionStatus_deliveredToCanceled() throws Exception {
         String token = createAdminAndGetToken("admin-freight-transition-2@test.com");
         UUID freightId = createFreightAndGetId(token, "Loja Transition 2");
 
@@ -295,15 +277,15 @@ class FreightControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void shouldReturnConflict_whenSkippingStatus() throws Exception {
+    void shouldReturnConflict_whenTransitioningDeliveredToInProgress() throws Exception {
         String token = createAdminAndGetToken("admin-freight-transition-4@test.com");
         UUID freightId = createFreightAndGetId(token, "Loja Transition 4");
 
         mockMvc.perform(patch("/api/freights/{id}/status", freightId)
                         .header("Authorization", "Bearer " + token)
-                        .param("status", "DELIVERED"))
+                        .param("status", "IN_PROGRESS"))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Não é possível mudar o status de PENDING para DELIVERED"));
+                .andExpect(jsonPath("$.message").value("Não é possível mudar o status de DELIVERED para IN_PROGRESS"));
     }
 
     @Test
