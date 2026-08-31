@@ -1,6 +1,7 @@
 package br.com.freteflow.controller;
 
 import br.com.freteflow.dto.report.BiWeeklyReportDTO;
+import br.com.freteflow.dto.report.VehicleProfitReportDTO;
 import br.com.freteflow.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -26,6 +27,16 @@ public class ReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 
         BiWeeklyReportDTO report = reportService.generateBiWeeklyReport(driverId, startDate, endDate);
+        return ResponseEntity.ok(report);
+    }
+    @GetMapping("/vehicle/{vehicleId}/profit")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR')")
+    public ResponseEntity<VehicleProfitReportDTO> getVehicleProfitReport(
+            @PathVariable UUID vehicleId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        VehicleProfitReportDTO report = reportService.generateVehicleProfitReport(vehicleId, startDate, endDate);
         return ResponseEntity.ok(report);
     }
 }
