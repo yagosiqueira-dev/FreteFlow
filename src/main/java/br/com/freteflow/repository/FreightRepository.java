@@ -12,4 +12,7 @@ import java.util.UUID;
 public interface FreightRepository extends JpaRepository<Freight, UUID> {
 
     List<Freight> findByDriverIdAndFreightDateBetweenOrderByFreightDateAsc(UUID driverId, LocalDateTime startDate, LocalDateTime endDate);
+
+    List<Freight> findByVehicleIdAndFreightDateBetweenOrderByFreightDateAsc(
+            UUID vehicleId, LocalDateTime start, LocalDateTime end);
 }
