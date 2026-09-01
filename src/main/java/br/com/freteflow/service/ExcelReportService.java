@@ -43,7 +43,7 @@ public class ExcelReportService {
         XSSFSheet sheet = wb.createSheet("Resumo");
         sheet.setDisplayGridlines(false);
 
-        // Aplica o fundo cinza clássico em toda a tela (Linhas 0 a 40, Colunas A a V)
+
         for (int r = 0; r <= 40; r++) {
             Row bgRow = sheet.createRow(r);
             for (int c = 0; c <= 21; c++) {
@@ -52,7 +52,7 @@ public class ExcelReportService {
             }
         }
 
-        // TOPBAR: Pinta a barra superior de PRETO (Linhas 1 a 4)
+
         for (int r = 1; r <= 4; r++) {
             Row bgRow = sheet.getRow(r);
             for (int c = 0; c <= 8; c++) {
@@ -66,7 +66,7 @@ public class ExcelReportService {
         sheet.setColumnWidth(3, 2000);
         sheet.setColumnWidth(4, 9000);
 
-        // Textos do Cabeçalho
+
         Row brand = sheet.getRow(1);
         brand.setHeightInPoints(30);
         Cell brandCell = brand.getCell(0);
@@ -83,12 +83,11 @@ public class ExcelReportService {
         periodLabel.setCellValue("Período: " + report.startDate().format(DATE_FMT) + " até " + report.endDate().format(DATE_FMT));
         periodLabel.setCellStyle(styles.labelValue);
 
-        // Cards de indicadores (Linhas 6 e 7)
+
         writeCard(sheet, 6, 0, "TOTAL EM FRETES (BRUTO)", report.totalFreightValue(), styles.cardHeaderNeutral, styles.cardValueNeutral);
         writeCard(sheet, 6, 2, "TOTAL EM DESPESAS", report.totalExpenses(), styles.cardHeaderNegative, styles.cardValueNegative);
         writeCard(sheet, 6, 4, "LUCRO LÍQUIDO", report.netProfit(), styles.cardHeaderPositive, styles.cardValuePositive);
 
-        // ---- DADOS OCULTOS NA LINHA 100 ----
         int chart1DataRow = 100;
         Row hRow1 = sheet.createRow(chart1DataRow);
         hRow1.createCell(0).setCellValue("Despesas");
@@ -98,7 +97,6 @@ public class ExcelReportService {
         hRow2.createCell(0).setCellValue("Lucro Líquido");
         hRow2.createCell(1).setCellValue(report.netProfit().doubleValue());
 
-        // Gráfico 1 (Composição do Frete) com as cores #c21815 e #19a600
         String chart1Title = String.format("Composição do Frete (Total Bruto: R$ %,.2f)", report.totalFreightValue());
         byte[][] colors1 = {
                 {(byte)194, (byte)24, (byte)21},  // #c21815 (Vermelho)
@@ -148,7 +146,6 @@ public class ExcelReportService {
                 {(byte)179, (byte)179, (byte)179}
         };
 
-        // Expandido de col2 = 8 para col2 = 9 para dar mais espaço ao texto de Manutenção
         addPieChart(sheet, 4, startRow, 9, startRow + 15, chart2Title, hiddenRowExp, currentRow - 1, colors2);
     }
 
@@ -311,12 +308,10 @@ public class ExcelReportService {
             DataFormat currencyFormat = wb.createDataFormat();
             short fmt = currencyFormat.getFormat("R$ #,##0.00");
 
-            // Fundo da aba Dashboard volta a ser o cinza clássico (GREY_25_PERCENT)
             dashboardBg = wb.createCellStyle();
             dashboardBg.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
             dashboardBg.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-            // Fundo da Topbar configurado para PRETO puro
             byte[] blackBg = new byte[]{(byte)0, (byte)0, (byte)0};
             topbarBg = wb.createCellStyle();
             ((XSSFCellStyle) topbarBg).setFillForegroundColor(new XSSFColor(blackBg, null));
@@ -354,7 +349,6 @@ public class ExcelReportService {
             currencyZebra.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             border(currencyZebra);
 
-            // Cores customizadas solicitadas: Vermelho #c21815 e Verde #19a600
             byte[] customRed = new byte[]{(byte)194, (byte)24, (byte)21};
             byte[] customGreen = new byte[]{(byte)25, (byte)166, (byte)0};
             byte[] black = new byte[]{(byte)0, (byte)0, (byte)0};
