@@ -25,7 +25,7 @@ public class ExcelReportService {
         try (XSSFWorkbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
-            Styles styles = new Styles(workbook, report.netProfit().signum() >= 0);
+            Styles styles = new Styles(workbook);
 
             buildSummarySheet(workbook, report, styles);
             buildFreightsSheet(workbook, report, styles);
@@ -37,164 +37,179 @@ public class ExcelReportService {
         }
     }
 
-    // ---------- ABA RESUMO ----------
+    // ---------- ABA RESUMO (DASHBOARD) ----------
 
     private void buildSummarySheet(XSSFWorkbook wb, VehicleProfitReportDTO report, Styles styles) {
         XSSFSheet sheet = wb.createSheet("Resumo");
-        sheet.setColumnWidth(0, 7000);
-        sheet.setColumnWidth(1, 5000);
-        sheet.setColumnWidth(2, 5000);
+        sheet.setDisplayGridlines(false);
 
-        // Cabeçalho com "logo" textual
-        Row brand = sheet.createRow(0);
-        Cell brandCell = brand.createCell(0);
-        brandCell.setCellValue("🚚 FreteFlow");
-        brandCell.setCellStyle(styles.brand);
-        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 2));
-
-        Row title = sheet.createRow(1);
-        Cell titleCell = title.createCell(0);
-        titleCell.setCellValue("Relatório de Lucro — Veículo " + report.licensePlate());
-        titleCell.setCellStyle(styles.title);
-        sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 2));
-
-        Row period = sheet.createRow(2);
-        Cell periodLabel = period.createCell(0);
-        periodLabel.setCellValue("Período de apuração:");
-        periodLabel.setCellStyle(styles.label);
-        Cell periodValue = period.createCell(1);
-        periodValue.setCellValue(report.startDate().format(DATE_FMT) + "  até  " + report.endDate().format(DATE_FMT));
-        periodValue.setCellStyle(styles.labelValue);
-
-        // Cards de indicadores (linha 4 a 6)
-        writeCard(sheet, 4, 0, "TOTAL EM FRETES", report.totalFreightValue(), styles.cardHeaderPositive, styles.cardValueNeutral);
-        writeCard(sheet, 4, 1, "TOTAL EM DESPESAS", report.totalExpenses(), styles.cardHeaderNegative, styles.cardValueNeutral);
-        writeCard(sheet, 4, 2, "LUCRO LÍQUIDO", report.netProfit(),
-                report.netProfit().signum() >= 0 ? styles.cardHeaderPositive : styles.cardHeaderNegative,
-                report.netProfit().signum() >= 0 ? styles.cardValuePositive : styles.cardValueNegative);
-
-        // Indicadores adicionais
-        int qtyFreights = report.freights().size();
-        int qtyExpenses = report.expenses().size();
-        BigDecimal avgFreight = qtyFreights == 0
-                ? BigDecimal.ZERO
-                : report.totalFreightValue().divide(BigDecimal.valueOf(qtyFreights), 2, java.math.RoundingMode.HALF_UP);
-
-        Row statsHeader = sheet.createRow(8);
-        String[] statLabels = {"Qtd. de Fretes", "Qtd. de Despesas", "Ticket Médio/Frete"};
-        for (int i = 0; i < statLabels.length; i++) {
-            Cell c = statsHeader.createCell(i);
-            c.setCellValue(statLabels[i]);
-            c.setCellStyle(styles.label);
+        // Aplica o fundo cinza clássico em toda a tela (Linhas 0 a 40, Colunas A a V)
+        for (int r = 0; r <= 40; r++) {
+            Row bgRow = sheet.createRow(r);
+            for (int c = 0; c <= 21; c++) {
+                Cell cell = bgRow.createCell(c);
+                cell.setCellStyle(styles.dashboardBg);
+            }
         }
-        Row statsValue = sheet.createRow(9);
-        Cell c0 = statsValue.createCell(0);
-        c0.setCellValue(qtyFreights);
-        c0.setCellStyle(styles.plainCentered);
-        Cell c1 = statsValue.createCell(1);
-        c1.setCellValue(qtyExpenses);
-        c1.setCellStyle(styles.plainCentered);
-        Cell c2 = statsValue.createCell(2);
-        c2.setCellValue(avgFreight.doubleValue());
-        c2.setCellStyle(styles.currencyCentered);
 
-        // Tabela oculta de apoio para o gráfico (Fretes x Despesas)
-        int chartDataRow = 12;
-        Row chartHeader = sheet.createRow(chartDataRow);
-        chartHeader.createCell(0).setCellValue("Categoria");
-        chartHeader.createCell(1).setCellValue("Valor");
-        Row rowFreight = sheet.createRow(chartDataRow + 1);
-        rowFreight.createCell(0).setCellValue("Fretes");
-        rowFreight.createCell(1).setCellValue(report.totalFreightValue().doubleValue());
-        Row rowExpense = sheet.createRow(chartDataRow + 2);
-        rowExpense.createCell(0).setCellValue("Despesas");
-        rowExpense.createCell(1).setCellValue(report.totalExpenses().doubleValue());
+        // TOPBAR: Pinta a barra superior de PRETO (Linhas 1 a 4)
+        for (int r = 1; r <= 4; r++) {
+            Row bgRow = sheet.getRow(r);
+            for (int c = 0; c <= 8; c++) {
+                bgRow.getCell(c).setCellStyle(styles.topbarBg);
+            }
+        }
 
-        addComparisonChart(sheet, chartDataRow);
+        sheet.setColumnWidth(0, 10000);
+        sheet.setColumnWidth(1, 2000);
+        sheet.setColumnWidth(2, 9000);
+        sheet.setColumnWidth(3, 2000);
+        sheet.setColumnWidth(4, 9000);
 
-        // Quebra de despesas por categoria (Diesel / Pedágio / Manutenção)
-        buildExpenseBreakdown(sheet, report, styles, chartDataRow + 5);
+        // Textos do Cabeçalho
+        Row brand = sheet.getRow(1);
+        brand.setHeightInPoints(30);
+        Cell brandCell = brand.getCell(0);
+        brandCell.setCellValue("🚚 FreteFlow ");
+        brandCell.setCellStyle(styles.brand);
+
+        Row title = sheet.getRow(2);
+        Cell titleCell = title.getCell(0);
+        titleCell.setCellValue("Relatório Financeiro — Veículo " + report.licensePlate());
+        titleCell.setCellStyle(styles.title);
+
+        Row period = sheet.getRow(3);
+        Cell periodLabel = period.getCell(0);
+        periodLabel.setCellValue("Período: " + report.startDate().format(DATE_FMT) + " até " + report.endDate().format(DATE_FMT));
+        periodLabel.setCellStyle(styles.labelValue);
+
+        // Cards de indicadores (Linhas 6 e 7)
+        writeCard(sheet, 6, 0, "TOTAL EM FRETES (BRUTO)", report.totalFreightValue(), styles.cardHeaderNeutral, styles.cardValueNeutral);
+        writeCard(sheet, 6, 2, "TOTAL EM DESPESAS", report.totalExpenses(), styles.cardHeaderNegative, styles.cardValueNegative);
+        writeCard(sheet, 6, 4, "LUCRO LÍQUIDO", report.netProfit(), styles.cardHeaderPositive, styles.cardValuePositive);
+
+        // ---- DADOS OCULTOS NA LINHA 100 ----
+        int chart1DataRow = 100;
+        Row hRow1 = sheet.createRow(chart1DataRow);
+        hRow1.createCell(0).setCellValue("Despesas");
+        hRow1.createCell(1).setCellValue(report.totalExpenses().doubleValue());
+
+        Row hRow2 = sheet.createRow(chart1DataRow + 1);
+        hRow2.createCell(0).setCellValue("Lucro Líquido");
+        hRow2.createCell(1).setCellValue(report.netProfit().doubleValue());
+
+        // Gráfico 1 (Composição do Frete) com as cores #c21815 e #19a600
+        String chart1Title = String.format("Composição do Frete (Total Bruto: R$ %,.2f)", report.totalFreightValue());
+        byte[][] colors1 = {
+                {(byte)194, (byte)24, (byte)21},  // #c21815 (Vermelho)
+                {(byte)25, (byte)166, (byte)0}   // #19a600 (Verde)
+        };
+        addPieChart(sheet, 0, 9, 3, 24, chart1Title, chart1DataRow, chart1DataRow + 1, colors1);
+
+        buildExpenseBreakdown(sheet, report, 9);
     }
 
     private void writeCard(XSSFSheet sheet, int startRow, int col, String label, BigDecimal value,
                            CellStyle headerStyle, CellStyle valueStyle) {
         Row headerRow = sheet.getRow(startRow) != null ? sheet.getRow(startRow) : sheet.createRow(startRow);
-        Cell header = headerRow.createCell(col);
+        headerRow.setHeightInPoints(20);
+        Cell header = headerRow.getCell(col) != null ? headerRow.getCell(col) : headerRow.createCell(col);
         header.setCellValue(label);
         header.setCellStyle(headerStyle);
 
         Row valueRow = sheet.getRow(startRow + 1) != null ? sheet.getRow(startRow + 1) : sheet.createRow(startRow + 1);
-        Cell valueCell = valueRow.createCell(col);
+        valueRow.setHeightInPoints(35);
+        Cell valueCell = valueRow.getCell(col) != null ? valueRow.getCell(col) : valueRow.createCell(col);
         valueCell.setCellValue(value.doubleValue());
         valueCell.setCellStyle(valueStyle);
     }
 
-    private void addComparisonChart(XSSFSheet sheet, int dataRow) {
-        XSSFDrawing drawing = sheet.createDrawingPatriarch();
-        XSSFClientAnchor anchor = drawing.createAnchor(0, 0, 0, 0, 4, 3, 10, 20);
+    private void buildExpenseBreakdown(XSSFSheet sheet, VehicleProfitReportDTO report, int startRow) {
+        Map<String, BigDecimal> byCategory = new LinkedHashMap<>();
+        for (ExpenseSummaryDTO e : report.expenses()) {
+            byCategory.merge(e.description(), e.amount(), BigDecimal::add);
+        }
+
+        if (byCategory.isEmpty()) return;
+
+        int hiddenRowExp = 105;
+        int currentRow = hiddenRowExp;
+        for (Map.Entry<String, BigDecimal> entry : byCategory.entrySet()) {
+            Row r = sheet.createRow(currentRow++);
+            r.createCell(0).setCellValue(entry.getKey());
+            r.createCell(1).setCellValue(entry.getValue().doubleValue());
+        }
+
+        String chart2Title = String.format("Despesas por Categoria (Total: R$ %,.2f)", report.totalExpenses());
+
+        byte[][] colors2 = {
+                {(byte)0, (byte)61, (byte)92},
+                {(byte)98, (byte)117, (byte)135},
+                {(byte)179, (byte)179, (byte)179}
+        };
+
+        // Expandido de col2 = 8 para col2 = 9 para dar mais espaço ao texto de Manutenção
+        addPieChart(sheet, 4, startRow, 9, startRow + 15, chart2Title, hiddenRowExp, currentRow - 1, colors2);
+    }
+
+    private void addPieChart(XSSFSheet sheet, int col1, int row1, int col2, int row2,
+                             String title, int firstDataRow, int lastDataRow, byte[][] colors) {
+        XSSFDrawing drawing = sheet.getDrawingPatriarch() != null ? sheet.getDrawingPatriarch() : sheet.createDrawingPatriarch();
+        XSSFClientAnchor anchor = drawing.createAnchor(0, 0, 0, 0, col1, row1, col2, row2);
 
         XSSFChart chart = drawing.createChart(anchor);
-        chart.setTitleText("Fretes x Despesas");
+        chart.setTitleText(title);
         chart.setTitleOverlay(false);
 
         XDDFChartLegend legend = chart.getOrAddLegend();
         legend.setPosition(LegendPosition.BOTTOM);
 
         XDDFDataSource<String> categories = XDDFDataSourcesFactory.fromStringCellRange(
-                sheet, new org.apache.poi.ss.util.CellRangeAddress(dataRow + 1, dataRow + 2, 0, 0));
+                sheet, new CellRangeAddress(firstDataRow, lastDataRow, 0, 0));
         XDDFNumericalDataSource<Double> values = XDDFDataSourcesFactory.fromNumericCellRange(
-                sheet, new org.apache.poi.ss.util.CellRangeAddress(dataRow + 1, dataRow + 2, 1, 1));
+                sheet, new CellRangeAddress(firstDataRow, lastDataRow, 1, 1));
 
-        XDDFChartData data = chart.createData(ChartTypes.BAR, chart.createCategoryAxis(AxisPosition.BOTTOM),
-                chart.createValueAxis(AxisPosition.LEFT));
+        XDDFChartData data = chart.createData(ChartTypes.PIE, null, null);
         XDDFChartData.Series series = data.addSeries(categories, values);
-        series.setTitle("Valor (R$)", null);
-        ((XDDFBarChartData) data).setBarDirection(BarDirection.COL);
+
+        series.setTitle("", null);
         chart.plot(data);
-    }
 
-    private void buildExpenseBreakdown(XSSFSheet sheet, VehicleProfitReportDTO report, Styles styles, int startRow) {
-        Map<String, BigDecimal> byCategory = new LinkedHashMap<>();
-        for (ExpenseSummaryDTO e : report.expenses()) {
-            byCategory.merge(e.description(), e.amount(), BigDecimal::add);
-        }
+        try {
+            org.openxmlformats.schemas.drawingml.x2006.chart.CTPieChart ctPie = chart.getCTChart().getPlotArea().getPieChartArray(0);
+            org.openxmlformats.schemas.drawingml.x2006.chart.CTPieSer ctSer = ctPie.getSerArray(0);
 
-        if (byCategory.isEmpty()) {
-            return;
-        }
+            org.openxmlformats.schemas.drawingml.x2006.chart.CTDLbls dLbls = ctSer.addNewDLbls();
+            dLbls.addNewShowVal().setVal(true);
+            dLbls.addNewShowCatName().setVal(true);
+            dLbls.addNewShowLegendKey().setVal(false);
+            dLbls.addNewShowPercent().setVal(false);
+            dLbls.addNewShowSerName().setVal(false);
 
-        Row header = sheet.createRow(startRow);
-        Cell headerCell = header.createCell(0);
-        headerCell.setCellValue("Despesas por Categoria");
-        headerCell.setCellStyle(styles.sectionTitle);
+            dLbls.addNewNumFmt().setFormatCode("\"R$\" #,##0.00");
+            dLbls.getNumFmt().setSourceLinked(false);
 
-        Row colHeader = sheet.createRow(startRow + 1);
-        Cell catHeader = colHeader.createCell(0);
-        catHeader.setCellValue("Categoria");
-        catHeader.setCellStyle(styles.tableHeader);
-        Cell valHeader = colHeader.createCell(1);
-        valHeader.setCellValue("Total");
-        valHeader.setCellStyle(styles.tableHeader);
-
-        int rowIdx = startRow + 2;
-        boolean zebra = false;
-        for (Map.Entry<String, BigDecimal> entry : byCategory.entrySet()) {
-            Row row = sheet.createRow(rowIdx++);
-            Cell nameCell = row.createCell(0);
-            nameCell.setCellValue(entry.getKey());
-            nameCell.setCellStyle(zebra ? styles.rowZebra : styles.rowPlain);
-            Cell valCell = row.createCell(1);
-            valCell.setCellValue(entry.getValue().doubleValue());
-            valCell.setCellStyle(zebra ? styles.currencyZebra : styles.currencyPlain);
-            zebra = !zebra;
-        }
+            for (int i = 0; i <= (lastDataRow - firstDataRow); i++) {
+                org.openxmlformats.schemas.drawingml.x2006.chart.CTDPt pt = ctSer.addNewDPt();
+                pt.addNewIdx().setVal(i);
+                byte[] color = colors[i % colors.length];
+                pt.addNewSpPr().addNewSolidFill().addNewSrgbClr().setVal(color);
+            }
+        } catch (Exception e) {}
     }
 
     // ---------- ABA FRETES ----------
 
     private void buildFreightsSheet(XSSFWorkbook wb, VehicleProfitReportDTO report, Styles styles) {
         XSSFSheet sheet = wb.createSheet("Fretes");
-        String[] columns = {"Data", "Motorista", "Loja/Rota", "Valor"};
+
+        sheet.setColumnWidth(0, 15 * 256);
+        sheet.setColumnWidth(1, 15 * 256);
+        sheet.setColumnWidth(2, 25 * 256);
+        sheet.setColumnWidth(3, 40 * 256);
+        sheet.setColumnWidth(4, 20 * 256);
+
+        String[] columns = {"Data", "Placa", "Motorista", "Loja/Rota", "Valor"};
         writeTableHeader(sheet, columns, styles);
 
         int rowIdx = 1;
@@ -202,21 +217,37 @@ public class ExcelReportService {
         for (FreightSummaryDTO f : report.freights()) {
             Row row = sheet.createRow(rowIdx++);
             writeCell(row, 0, f.date().format(DATE_FMT), zebra ? styles.rowZebra : styles.rowPlain);
-            writeCell(row, 1, f.driverName(), zebra ? styles.rowZebra : styles.rowPlain);
-            writeCell(row, 2, f.storeName(), zebra ? styles.rowZebra : styles.rowPlain);
-            Cell valueCell = row.createCell(3);
+            writeCell(row, 1, report.licensePlate(), zebra ? styles.rowZebra : styles.rowPlain);
+            writeCell(row, 2, f.driverName(), zebra ? styles.rowZebra : styles.rowPlain);
+            writeCell(row, 3, f.storeName(), zebra ? styles.rowZebra : styles.rowPlain);
+
+            Cell valueCell = row.createCell(4);
             valueCell.setCellValue(f.value().doubleValue());
             valueCell.setCellStyle(zebra ? styles.currencyZebra : styles.currencyPlain);
             zebra = !zebra;
         }
 
-        finalizeTable(sheet, columns.length, rowIdx);
+        Row totalRow = sheet.createRow(rowIdx);
+        Cell totalLabel = totalRow.createCell(3);
+        totalLabel.setCellValue("TOTAL FILTRADO:");
+        totalLabel.setCellStyle(styles.tableHeader);
+
+        Cell totalValue = totalRow.createCell(4);
+        totalValue.setCellFormula(String.format("SUBTOTAL(109, E2:E%d)", rowIdx));
+        totalValue.setCellStyle(styles.currencyPlain);
+
+        finalizeTable(sheet, columns.length, rowIdx + 1);
     }
 
     // ---------- ABA DESPESAS ----------
 
     private void buildExpensesSheet(XSSFWorkbook wb, VehicleProfitReportDTO report, Styles styles) {
         XSSFSheet sheet = wb.createSheet("Despesas");
+
+        sheet.setColumnWidth(0, 15 * 256);
+        sheet.setColumnWidth(1, 50 * 256);
+        sheet.setColumnWidth(2, 20 * 256);
+
         String[] columns = {"Data", "Descrição", "Valor"};
         writeTableHeader(sheet, columns, styles);
 
@@ -226,19 +257,28 @@ public class ExcelReportService {
             Row row = sheet.createRow(rowIdx++);
             writeCell(row, 0, e.date().format(DATE_FMT), zebra ? styles.rowZebra : styles.rowPlain);
             writeCell(row, 1, e.description(), zebra ? styles.rowZebra : styles.rowPlain);
+
             Cell valueCell = row.createCell(2);
             valueCell.setCellValue(e.amount().doubleValue());
             valueCell.setCellStyle(zebra ? styles.currencyZebra : styles.currencyPlain);
             zebra = !zebra;
         }
 
-        finalizeTable(sheet, columns.length, rowIdx);
-    }
+        Row totalRow = sheet.createRow(rowIdx);
+        Cell totalLabel = totalRow.createCell(1);
+        totalLabel.setCellValue("TOTAL FILTRADO:");
+        totalLabel.setCellStyle(styles.tableHeader);
 
-    // ---------- HELPERS COMPARTILHADOS ----------
+        Cell totalValue = totalRow.createCell(2);
+        totalValue.setCellFormula(String.format("SUBTOTAL(109, C2:C%d)", rowIdx));
+        totalValue.setCellStyle(styles.currencyPlain);
+
+        finalizeTable(sheet, columns.length, rowIdx + 1);
+    }
 
     private void writeTableHeader(Sheet sheet, String[] columns, Styles styles) {
         Row header = sheet.createRow(0);
+        header.setHeightInPoints(22);
         for (int i = 0; i < columns.length; i++) {
             Cell cell = header.createCell(i);
             cell.setCellValue(columns[i]);
@@ -256,117 +296,123 @@ public class ExcelReportService {
         if (lastRowExclusive > 1) {
             sheet.setAutoFilter(new CellRangeAddress(0, lastRowExclusive - 1, 0, columnCount - 1));
         }
-        for (int i = 0; i < columnCount; i++) {
-            sheet.autoSizeColumn(i);
-        }
         sheet.createFreezePane(0, 1);
     }
 
-    // ---------- ESTILOS ----------
+    // ---------- ESTILOS VISUAIS ----------
 
     private static class Styles {
-        final CellStyle brand;
-        final CellStyle title;
-        final CellStyle label;
-        final CellStyle labelValue;
-        final CellStyle sectionTitle;
-        final CellStyle tableHeader;
-        final CellStyle rowPlain;
-        final CellStyle rowZebra;
-        final CellStyle currencyPlain;
-        final CellStyle currencyZebra;
-        final CellStyle currencyCentered;
-        final CellStyle plainCentered;
-        final CellStyle cardHeaderPositive;
-        final CellStyle cardHeaderNegative;
-        final CellStyle cardValueNeutral;
-        final CellStyle cardValuePositive;
-        final CellStyle cardValueNegative;
+        final CellStyle brand, title, labelValue, tableHeader, rowPlain, rowZebra;
+        final CellStyle currencyPlain, currencyZebra, dashboardBg, topbarBg;
+        final CellStyle cardHeaderNeutral, cardHeaderPositive, cardHeaderNegative;
+        final CellStyle cardValueNeutral, cardValuePositive, cardValueNegative;
 
-        Styles(XSSFWorkbook wb, boolean overallPositive) {
+        Styles(XSSFWorkbook wb) {
             DataFormat currencyFormat = wb.createDataFormat();
             short fmt = currencyFormat.getFormat("R$ #,##0.00");
 
-            brand = font(wb, 16, true, IndexedColors.DARK_BLUE.getIndex(), null);
-            title = font(wb, 13, true, IndexedColors.GREY_80_PERCENT.getIndex(), null);
-            label = font(wb, 10, true, IndexedColors.GREY_50_PERCENT.getIndex(), null);
-            labelValue = font(wb, 10, false, IndexedColors.BLACK.getIndex(), null);
-            sectionTitle = font(wb, 12, true, IndexedColors.DARK_BLUE.getIndex(), null);
+            // Fundo da aba Dashboard volta a ser o cinza clássico (GREY_25_PERCENT)
+            dashboardBg = wb.createCellStyle();
+            dashboardBg.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            dashboardBg.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            // Fundo da Topbar configurado para PRETO puro
+            byte[] blackBg = new byte[]{(byte)0, (byte)0, (byte)0};
+            topbarBg = wb.createCellStyle();
+            ((XSSFCellStyle) topbarBg).setFillForegroundColor(new XSSFColor(blackBg, null));
+            topbarBg.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            brand = createCustomStyleWithRgb(wb, 18, true, new byte[]{(byte)255, (byte)255, (byte)255}, blackBg);
+            title = createCustomStyleWithRgb(wb, 14, true, new byte[]{(byte)220, (byte)220, (byte)220}, blackBg);
+            labelValue = createCustomStyleWithRgb(wb, 11, false, new byte[]{(byte)220, (byte)220, (byte)220}, blackBg);
 
             tableHeader = wb.createCellStyle();
-            Font headerFont = wb.createFont();
-            headerFont.setBold(true);
-            headerFont.setColor(IndexedColors.WHITE.getIndex());
-            tableHeader.setFont(headerFont);
-            tableHeader.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+            tableHeader.setFont(createFont(wb, 11, true, IndexedColors.WHITE.getIndex()));
+            tableHeader.setFillForegroundColor(IndexedColors.GREY_80_PERCENT.getIndex());
             tableHeader.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             border(tableHeader);
 
             rowPlain = wb.createCellStyle();
+            rowPlain.setFont(createFont(wb, 11, false, IndexedColors.BLACK.getIndex()));
             border(rowPlain);
 
             rowZebra = wb.createCellStyle();
+            rowZebra.setFont(createFont(wb, 11, false, IndexedColors.BLACK.getIndex()));
             rowZebra.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
             rowZebra.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             border(rowZebra);
 
             currencyPlain = wb.createCellStyle();
             currencyPlain.setDataFormat(fmt);
+            currencyPlain.setFont(createFont(wb, 11, false, IndexedColors.BLACK.getIndex()));
             border(currencyPlain);
 
             currencyZebra = wb.createCellStyle();
             currencyZebra.setDataFormat(fmt);
+            currencyZebra.setFont(createFont(wb, 11, false, IndexedColors.BLACK.getIndex()));
             currencyZebra.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
             currencyZebra.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             border(currencyZebra);
 
-            currencyCentered = wb.createCellStyle();
-            currencyCentered.setDataFormat(fmt);
-            currencyCentered.setAlignment(HorizontalAlignment.CENTER);
+            // Cores customizadas solicitadas: Vermelho #c21815 e Verde #19a600
+            byte[] customRed = new byte[]{(byte)194, (byte)24, (byte)21};
+            byte[] customGreen = new byte[]{(byte)25, (byte)166, (byte)0};
+            byte[] black = new byte[]{(byte)0, (byte)0, (byte)0};
 
-            plainCentered = wb.createCellStyle();
-            plainCentered.setAlignment(HorizontalAlignment.CENTER);
+            cardHeaderNeutral = customCardHeader(wb, black);
+            cardHeaderPositive = customCardHeader(wb, customGreen);
+            cardHeaderNegative = customCardHeader(wb, customRed);
 
-            cardHeaderPositive = cardHeader(wb, IndexedColors.LIGHT_GREEN.getIndex());
-            cardHeaderNegative = cardHeader(wb, IndexedColors.ROSE.getIndex());
-
-            cardValueNeutral = cardValue(wb, fmt, IndexedColors.BLACK.getIndex());
-            cardValuePositive = cardValue(wb, fmt, IndexedColors.GREEN.getIndex());
-            cardValueNegative = cardValue(wb, fmt, IndexedColors.RED.getIndex());
+            cardValueNeutral = customCardValue(wb, fmt, black);
+            cardValuePositive = customCardValue(wb, fmt, customGreen);
+            cardValueNegative = customCardValue(wb, fmt, customRed);
         }
 
-        private CellStyle font(XSSFWorkbook wb, int size, boolean bold, short color, IndexedColors fill) {
-            CellStyle style = wb.createCellStyle();
+        private Font createFont(XSSFWorkbook wb, int size, boolean bold, short color) {
             Font font = wb.createFont();
+            font.setFontName("Segoe UI");
             font.setFontHeightInPoints((short) size);
             font.setBold(bold);
             font.setColor(color);
-            style.setFont(font);
+            return font;
+        }
+
+        private XSSFFont createCustomFont(XSSFWorkbook wb, int size, boolean bold, byte[] rgb) {
+            XSSFFont font = wb.createFont();
+            font.setFontName("Segoe UI");
+            font.setFontHeightInPoints((short) size);
+            font.setBold(bold);
+            font.setColor(new XSSFColor(rgb, null));
+            return font;
+        }
+
+        private XSSFCellStyle createCustomStyleWithRgb(XSSFWorkbook wb, int size, boolean bold, byte[] fontRgb, byte[] bgRgb) {
+            XSSFCellStyle style = wb.createCellStyle();
+            style.setFont(createCustomFont(wb, size, bold, fontRgb));
+            style.setFillForegroundColor(new XSSFColor(bgRgb, null));
+            style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             return style;
         }
 
-        private CellStyle cardHeader(XSSFWorkbook wb, short fillColor) {
-            CellStyle style = wb.createCellStyle();
-            Font font = wb.createFont();
-            font.setBold(true);
-            font.setFontHeightInPoints((short) 9);
-            style.setFont(font);
-            style.setFillForegroundColor(fillColor);
+        private XSSFCellStyle customCardHeader(XSSFWorkbook wb, byte[] fontColor) {
+            XSSFCellStyle style = wb.createCellStyle();
+            style.setFont(createCustomFont(wb, 10, true, fontColor));
+            style.setFillForegroundColor(IndexedColors.WHITE.getIndex());
             style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             style.setAlignment(HorizontalAlignment.CENTER);
+            style.setVerticalAlignment(VerticalAlignment.CENTER);
             border(style);
             return style;
         }
 
-        private CellStyle cardValue(XSSFWorkbook wb, short fmt, short fontColor) {
-            CellStyle style = wb.createCellStyle();
-            Font font = wb.createFont();
-            font.setBold(true);
-            font.setFontHeightInPoints((short) 14);
-            font.setColor(fontColor);
-            style.setFont(font);
+        private XSSFCellStyle customCardValue(XSSFWorkbook wb, short fmt, byte[] fontColor) {
+            XSSFCellStyle style = wb.createCellStyle();
+            style.setFont(createCustomFont(wb, 16, true, fontColor));
             style.setDataFormat(fmt);
+            style.setFillForegroundColor(IndexedColors.WHITE.getIndex());
+            style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             style.setAlignment(HorizontalAlignment.CENTER);
+            style.setVerticalAlignment(VerticalAlignment.CENTER);
             border(style);
             return style;
         }
@@ -376,6 +422,10 @@ public class ExcelReportService {
             style.setBorderBottom(BorderStyle.THIN);
             style.setBorderLeft(BorderStyle.THIN);
             style.setBorderRight(BorderStyle.THIN);
+            style.setTopBorderColor(IndexedColors.GREY_40_PERCENT.getIndex());
+            style.setBottomBorderColor(IndexedColors.GREY_40_PERCENT.getIndex());
+            style.setLeftBorderColor(IndexedColors.GREY_40_PERCENT.getIndex());
+            style.setRightBorderColor(IndexedColors.GREY_40_PERCENT.getIndex());
         }
     }
 }
