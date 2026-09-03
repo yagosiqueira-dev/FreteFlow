@@ -43,7 +43,6 @@ public class ExcelReportService {
         XSSFSheet sheet = wb.createSheet("Resumo");
         sheet.setDisplayGridlines(false);
 
-
         for (int r = 0; r <= 40; r++) {
             Row bgRow = sheet.createRow(r);
             for (int c = 0; c <= 21; c++) {
@@ -52,10 +51,9 @@ public class ExcelReportService {
             }
         }
 
-
         for (int r = 1; r <= 4; r++) {
             Row bgRow = sheet.getRow(r);
-            for (int c = 0; c <= 8; c++) {
+            for (int c = 0; c <= 21; c++) {
                 bgRow.getCell(c).setCellStyle(styles.topbarBg);
             }
         }
@@ -66,11 +64,10 @@ public class ExcelReportService {
         sheet.setColumnWidth(3, 2000);
         sheet.setColumnWidth(4, 9000);
 
-
         Row brand = sheet.getRow(1);
         brand.setHeightInPoints(30);
         Cell brandCell = brand.getCell(0);
-        brandCell.setCellValue("🚚 FreteFlow ");
+        brandCell.setCellValue("🚚 FreteFlow");
         brandCell.setCellStyle(styles.brand);
 
         Row title = sheet.getRow(2);
@@ -83,7 +80,7 @@ public class ExcelReportService {
         periodLabel.setCellValue("Período: " + report.startDate().format(DATE_FMT) + " até " + report.endDate().format(DATE_FMT));
         periodLabel.setCellStyle(styles.labelValue);
 
-
+        // Cards de indicadores (Linhas 6 e 7)
         writeCard(sheet, 6, 0, "TOTAL EM FRETES (BRUTO)", report.totalFreightValue(), styles.cardHeaderNeutral, styles.cardValueNeutral);
         writeCard(sheet, 6, 2, "TOTAL EM DESPESAS", report.totalExpenses(), styles.cardHeaderNegative, styles.cardValueNegative);
         writeCard(sheet, 6, 4, "LUCRO LÍQUIDO", report.netProfit(), styles.cardHeaderPositive, styles.cardValuePositive);
@@ -199,6 +196,7 @@ public class ExcelReportService {
 
     private void buildFreightsSheet(XSSFWorkbook wb, VehicleProfitReportDTO report, Styles styles) {
         XSSFSheet sheet = wb.createSheet("Fretes");
+        sheet.setDisplayGridlines(false);
 
         sheet.setColumnWidth(0, 15 * 256);
         sheet.setColumnWidth(1, 15 * 256);
@@ -240,6 +238,7 @@ public class ExcelReportService {
 
     private void buildExpensesSheet(XSSFWorkbook wb, VehicleProfitReportDTO report, Styles styles) {
         XSSFSheet sheet = wb.createSheet("Despesas");
+        sheet.setDisplayGridlines(false);
 
         sheet.setColumnWidth(0, 15 * 256);
         sheet.setColumnWidth(1, 50 * 256);
