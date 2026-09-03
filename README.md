@@ -1,540 +1,145 @@
-# 🚛 FreteFlow
+# 🚚 FreteFlow
 
-Sistema de gestão e automação de fretes desenvolvido para facilitar o controle de uma pequena frota de veículos, centralizando informações de fretes, motoristas, veículos, despesas e resultados financeiros.
+Sistema de gestão de fretes desenvolvido para a operação real de uma pequena frota de caminhões em São Paulo. Nasceu para resolver um problema concreto: o controle manual de fretes e despesas via WhatsApp e papel, e evoluiu para uma API REST completa, segura e testada, com relatórios financeiros e exportação em Excel.
 
-O projeto também é desenvolvido como um **projeto prático de aprendizado e portfólio**, com foco em desenvolvimento backend, integração de sistemas, segurança, cloud, automação e inteligência artificial.
-
-> 🚧 **Status:** Em desenvolvimento
+> Projeto construído em produção contínua, incorporando mudanças de requisito reais conforme o entendimento do negócio evoluiu, do mesmo jeito que aconteceria num projeto freelancer com um cliente de verdade.
 
 ---
 
-## 📌 Sobre o projeto
+## 📋 Sobre o projeto
 
-O FreteFlow tem como objetivo transformar o controle manual de fretes em um sistema centralizado e automatizado.
+O dono de uma pequena transportadora precisava trocar o controle manual de fretes (motorista, veículo, rota, valor) e despesas (diesel, pedágio, manutenção) por algo confiável, com histórico e cálculo automático de lucro por caminhão. O FreteFlow resolve isso com:
 
-A ideia é permitir que os registros possam ser realizados de maneira simples, inicialmente através de uma API e futuramente também pelo **WhatsApp**, enquanto os dados ficam armazenados em um banco de dados e podem ser consultados através de um aplicativo/web app.
-
-### Fluxo planejado
-
-```text
-📱 WhatsApp
-     │
-     ▼
-🌐 WhatsApp Business Platform
-     │
-     ▼
-☕ Spring Boot API
-     │
-     ▼
-🗄️ PostgreSQL
-     │
-     ├──────────────► 📊 Dashboard
-     │
-     └──────────────► 📗 Excel
-```
-
-Futuramente, uma camada de inteligência artificial poderá interpretar mensagens em linguagem natural e transformá-las em dados estruturados.
+- Cadastro de motoristas, veículos, rotas fixas (lojas) e fretes
+- Registro de despesas operacionais por veículo
+- Relatório quinzenal por motorista (fechamento nos períodos de 11 a 25 e 26 a 10, replicando a rotina real do cliente)
+- Relatório de lucro líquido por caminhão (fretes menos despesas), com exportação em Excel estilo dashboard (cards, gráficos de pizza, formatação condicional)
+- Autenticação JWT com controle de acesso por papel (Admin / Operador)
 
 ---
 
-# 🎯 Objetivos
+## 🛠️ Stack técnica
 
-* Centralizar o gerenciamento de fretes.
-* Cadastrar e gerenciar veículos.
-* Cadastrar e gerenciar motoristas.
-* Registrar despesas relacionadas aos fretes.
-* Calcular valores e resultados.
-* Disponibilizar relatórios.
-* Permitir consulta através de uma aplicação web/PWA.
-* Integrar o sistema com o WhatsApp.
-* Automatizar a geração de relatórios.
-* Futuramente utilizar IA para interpretar mensagens em linguagem natural.
-* Aplicar boas práticas de desenvolvimento e segurança.
-
----
-
-# 🛠️ Tecnologias
-
-## Backend
-
-* Java 21
-* Spring Boot
-* Spring Web
-* Spring Data JPA
-* Hibernate
-* Bean Validation
-* Spring Security
-* JWT
-* Maven
-
-## Banco de dados
-
-* PostgreSQL
-* Flyway
-
-## Testes
-
-* JUnit
-* Mockito
-* Spring Boot Test
-
-## Frontend
-
-* React
-* TypeScript
-* PWA
-
-## Infraestrutura
-
-* Docker
-* Docker Compose
-
-## Documentação
-
-* Swagger / OpenAPI
-
-## Versionamento
-
-* Git
-* GitHub
-
-## Integrações futuras
-
-* WhatsApp Business Platform / Cloud API
-* Microsoft Graph API
-* Excel
-
-## Performance e mensageria — futuro
-
-* Redis
-* RabbitMQ
-
-## Cloud e DevOps — futuro
-
-* GitHub Actions
-* Azure
-
-## Inteligência Artificial — futuro
-
-* APIs de LLM
-* Structured Outputs
-* Function/Tool Calling
+| Camada | Tecnologia |
+|---|---|
+| Linguagem | Java 21 |
+| Framework | Spring Boot 4.1 |
+| Persistência | Spring Data JPA / Hibernate |
+| Banco de dados | PostgreSQL 16 |
+| Versionamento de schema | Flyway |
+| Segurança | Spring Security (stateless) + JWT (Auth0/java-jwt) |
+| Documentação de API | springdoc-openapi (Swagger UI) |
+| Exportação | Apache POI (Excel com gráficos nativos) |
+| Testes | JUnit 5, Mockito, Testcontainers (PostgreSQL real) |
+| Build | Maven |
+| Infraestrutura local | Docker / Docker Compose |
 
 ---
 
-# 📚 Aprendizados
+## 🏗️ Decisões de arquitetura
 
-Este projeto está sendo desenvolvido de forma incremental, com o objetivo de transformar conhecimentos teóricos em experiência prática.
-
-Durante o desenvolvimento serão explorados conceitos como:
-
-### Backend
-
-* Desenvolvimento de APIs REST
-* Arquitetura em camadas
-* Controllers
-* Services
-* Repositories
-* DTOs
-* Injeção de dependências
-* Tratamento de exceções
-* Validação de dados
-* Princípios SOLID
-* Clean Code
-
-### Banco de dados
-
-* Modelagem relacional
-* PostgreSQL
-* SQL
-* Relacionamentos
-* Índices
-* Transações
-* Migrações com Flyway
-* JPA / Hibernate
-
-### Segurança
-
-* Autenticação
-* Autorização
-* JWT
-* Hash de senhas
-* Controle de acesso
-* Validação de entradas
-* OWASP Top 10
-* Proteção de APIs
-* Gerenciamento de secrets
-
-### Testes
-
-* Testes unitários
-* Testes de integração
-* JUnit
-* Mockito
-* Testes de APIs
-
-### DevOps
-
-* Git
-* GitHub
-* Docker
-* Docker Compose
-* CI/CD
-* GitHub Actions
-
-### Integrações
-
-* Webhooks
-* APIs externas
-* WhatsApp Business Platform
-* Microsoft Graph API
-
-### Frontend
-
-* React
-* TypeScript
-* Comunicação com APIs REST
-* PWA
-* Desenvolvimento responsivo
-
-### Inteligência Artificial
-
-* Integração com APIs de LLM
-* Engenharia de prompts
-* Structured Outputs
-* Function/Tool Calling
-* Validação de respostas geradas por IA
+- **UUID como chave primária** em todas as entidades. Isso evita enumeração sequencial de IDs em uma API pública.
+- **Flyway com `ddl-auto: validate`**. O schema do banco é 100% controlado por migrations versionadas; o Hibernate nunca altera a estrutura sozinho, só valida.
+- **Padrão em camadas** (`Controller → Service → Repository`), com DTOs em `record` isolando completamente as entidades JPA da API pública.
+- **Testes de integração com Testcontainers, não H2**. Os testes rodam contra um PostgreSQL real, garantindo que recursos específicos do banco (tipos nativos, geração de UUID) se comportem exatamente como em produção.
+- **Soft delete** em Veículo, Motorista e Loja. Nada é apagado fisicamente, preservando histórico de operação.
+- **Máquina de estados no ciclo de vida do frete** (`PENDING → IN_PROGRESS → DELIVERED`, com `CANCELED` sempre disponível a partir de qualquer estado não final), impedindo transições inválidas via regra de negócio explícita.
 
 ---
 
-# 🏗️ Arquitetura
+## 🔐 Segurança
 
-A arquitetura será construída de forma incremental.
-
-### Arquitetura inicial
-
-```text
-Client
-  │
-  ▼
-REST API
-  │
-  ▼
-Controller
-  │
-  ▼
-Service
-  │
-  ▼
-Repository
-  │
-  ▼
-PostgreSQL
-```
-
-### Arquitetura planejada
-
-```text
-                    ┌──────────────┐
-                    │   WhatsApp   │
-                    └──────┬───────┘
-                           │
-                           ▼
-                  ┌─────────────────┐
-                  │ WhatsApp Cloud  │
-                  │      API        │
-                  └────────┬────────┘
-                           │
-                           ▼
-┌──────────────┐    ┌──────────────┐
-│ React / PWA  │───►│  Spring Boot │
-└──────────────┘    │      API     │
-                    └───────┬──────┘
-                            │
-                 ┌──────────┼──────────┐
-                 ▼          ▼          ▼
-             PostgreSQL   Redis    RabbitMQ
-                 │
-                 ▼
-             Relatórios
-                 │
-                 ▼
-               Excel
-```
-
-A arquitetura poderá ser modificada conforme novos requisitos forem identificados.
+- Autenticação stateless via JWT, com filtro próprio validando o token em cada requisição.
+- Controle de acesso por papel (`@PreAuthorize`). Operadores têm acesso somente leitura a dados mestres (veículos, motoristas, lojas), enquanto Fretes e Despesas são de uso operacional diário liberado a ambos os papéis.
+- Registro público de usuário sempre cria um usuário com papel mínimo (`OPERATOR`), ignorando qualquer tentativa de elevar privilégio no payload de entrada. Essa proteção corrige uma vulnerabilidade real de auto-promoção a administrador identificada durante o desenvolvimento.
+- Promoção a administrador exposta apenas por endpoint protegido, exclusivo para quem já é admin.
+- CPF e telefone de motoristas mascarados nas respostas da API.
+- Tratamento global de exceções (`@RestControllerAdvice`) garante que nenhum erro interno (stacktrace, estrutura de pacotes, versão de biblioteca) vaze para o cliente. Toda exceção não mapeada retorna uma mensagem genérica, com o detalhe completo registrado apenas no log do servidor.
+- Validação real de CPF (algoritmo de dígitos verificadores), não apenas checagem de formato.
 
 ---
 
-# 🗃️ Entidades
+## 🧪 Testes
 
-As principais entidades planejadas são:
+Cobertura via testes de integração ponta a ponta (Controller → Service → Repository → banco PostgreSQL real via Testcontainers), incluindo:
 
-```text
-User
- └── Usuários do sistema
+- Fluxo completo de autenticação e autorização por papel
+- Regras de negócio (validação de CPF, placa, disponibilidade de recurso, transições de status)
+- Casos de erro (recurso inexistente, duplicidade, dado inválido)
+- Cálculo de relatórios financeiros com múltiplos registros e filtro de período
 
-Driver
- └── Motoristas
-
-Vehicle
- └── Veículos da frota
-
-Freight
- └── Registros de fretes
-
-Expense
- └── Despesas relacionadas aos fretes
-```
-
-O modelo de dados será evoluído conforme o desenvolvimento.
-
----
-
-# 🚧 Status atual
-
-Atualmente o projeto encontra-se na fase inicial de desenvolvimento.
-
-### Implementado
-
-* [x] Configuração inicial do projeto Spring Boot
-* [x] Java 21
-* [x] Configuração do PostgreSQL
-* [x] Configuração do Flyway
-* [x] Primeira entidade `User`
-* [x] Primeira migration do banco
-* [x] Estrutura inicial do projeto
-
-### Em desenvolvimento
-
-* [ ] `UserRepository`
-* [ ] `UserService`
-* [ ] `UserController`
-* [ ] Validação de dados
-* [ ] Tratamento global de exceções
-* [ ] Testes automatizados
-
----
-
-# 🗺️ Roadmap
-
-## Fase 1 — Backend e banco
-
-* [x] Configuração do Spring Boot
-* [x] Configuração do PostgreSQL
-* [x] Flyway
-* [x] Entidade User
-* [ ] Repositories
-* [ ] Services
-* [ ] Controllers
-* [ ] DTOs
-* [ ] Validações
-* [ ] Tratamento de exceções
-* [ ] Testes
-
-## Fase 2 — Segurança
-
-* [ ] Spring Security
-* [ ] Autenticação
-* [ ] JWT
-* [ ] Autorização
-* [ ] Controle de acesso
-* [ ] Proteção de endpoints
-* [ ] Gerenciamento seguro de secrets
-
-## Fase 3 — Gestão de frota
-
-* [ ] Cadastro de veículos
-* [ ] Cadastro de motoristas
-* [ ] Cadastro de fretes
-* [ ] Cadastro de despesas
-* [ ] Regras de negócio
-* [ ] Cálculo de resultados
-* [ ] Relatórios
-
-## Fase 4 — Frontend
-
-* [ ] React
-* [ ] TypeScript
-* [ ] Dashboard
-* [ ] Tela de fretes
-* [ ] Tela de veículos
-* [ ] Tela de motoristas
-* [ ] Tela de despesas
-* [ ] PWA
-* [ ] Responsividade
-
-## Fase 5 — Excel
-
-* [ ] Exportação `.xlsx`
-* [ ] Relatórios
-* [ ] Tabelas
-* [ ] Integração com Microsoft Graph futuramente
-
-## Fase 6 — WhatsApp
-
-* [ ] Configuração da WhatsApp Business Platform
-* [ ] Webhook
-* [ ] Recebimento de mensagens
-* [ ] Envio de mensagens
-* [ ] Fluxo de cadastro de frete
-* [ ] Validação de mensagens
-* [ ] Consulta de informações pelo WhatsApp
-
-## Fase 7 — Performance e mensageria
-
-* [ ] Redis
-* [ ] Cache
-* [ ] RabbitMQ
-* [ ] Processamento assíncrono
-
-## Fase 8 — Cloud e DevOps
-
-* [ ] Docker
-* [ ] Docker Compose
-* [ ] GitHub Actions
-* [ ] CI/CD
-* [ ] Deploy em cloud
-* [ ] Monitoramento
-
-## Fase 9 — Inteligência Artificial
-
-* [ ] Integração com LLM
-* [ ] Interpretação de mensagens
-* [ ] Structured Outputs
-* [ ] Function/Tool Calling
-* [ ] Validação dos dados gerados pela IA
-* [ ] Consultas através de linguagem natural
-
----
-
-# 🔐 Segurança
-
-Segurança é uma prioridade durante todo o desenvolvimento.
-
-O projeto busca seguir boas práticas relacionadas a:
-
-* OWASP Top 10
-* Princípio do menor privilégio
-* Zero Trust
-* Validação de entradas
-* Autenticação segura
-* Autorização
-* Proteção de APIs
-* Hash seguro de senhas
-* Gerenciamento de tokens
-* Proteção de secrets
-* HTTPS
-* CORS
-* Rate limiting
-* Logs sem informações sensíveis
-* Validação de webhooks
-* Controle de acesso ao banco de dados
-
-Nenhuma credencial, senha, token ou chave de API deverá ser armazenada diretamente no código ou versionada no Git.
-
----
-
-# 🧪 Estratégia de testes
-
-O projeto utilizará diferentes níveis de testes:
-
-```text
-Testes unitários
-       ↓
-Testes de integração
-       ↓
-Testes da API
-       ↓
-Testes de segurança
-       ↓
-CI/CD
-```
-
-As regras de negócio críticas deverão possuir testes automatizados.
-
----
-
-# 🐳 Execução local
-
-> Esta seção será atualizada conforme o ambiente de desenvolvimento for configurado.
-
-Requisitos previstos:
-
-* Java 21
-* Maven
-* Docker
-* Docker Compose
-* PostgreSQL
-* Git
-
----
-
-# 📂 Estrutura do projeto
-
-A estrutura será evoluída conforme novas funcionalidades forem implementadas.
-
-Estrutura esperada:
-
-```text
-freteflow/
-├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── ...
-│   │   └── resources/
-│   │       ├── db/
-│   │       │   └── migration/
-│   │       └── application.yml
-│   │
-│   └── test/
-│       └── java/
-│
-├── docker/
-├── docs/
-├── .gitignore
-├── docker-compose.yml
-├── pom.xml
-└── README.md
+```bash
+./mvnw test
 ```
 
 ---
 
-# 📈 Evolução do projeto
+## 🚀 Rodando localmente
 
-O FreteFlow será desenvolvido de maneira incremental.
+### Pré-requisitos
+- JDK 21
+- Docker + Docker Compose
+- Maven (ou use o wrapper `./mvnw` incluso)
 
-A prioridade será:
+### Passos
 
-```text
-Funcionalidade
-     ↓
-Entendimento
-     ↓
-Implementação
-     ↓
-Testes
-     ↓
-Segurança
-     ↓
-Documentação
-     ↓
-Próxima funcionalidade
+```bash
+# 1. Clone o repositório
+git clone https://github.com/yagosiqueira-dev/freteflow.git
+cd freteflow
+
+# 2. Configure as variáveis de ambiente
+cp .env.example .env
+# edite o .env com suas credenciais locais
+
+# 3. Suba o banco de dados
+docker compose up -d
+
+# 4. Rode a aplicação (o Flyway aplica as migrations automaticamente)
+./mvnw spring-boot:run
 ```
 
-Novas tecnologias somente serão adicionadas quando resolverem um problema real do projeto ou contribuírem para um aprendizado relevante.
+A API estará disponível em `http://localhost:8080`.
+
+### Documentação interativa
+
+Com a aplicação rodando, acesse:
+
+```
+http://localhost:8080/swagger-ui/index.html
+```
+
+Faça login via `POST /auth/login`, copie o token retornado, clique em **Authorize** e cole o token para testar os endpoints protegidos diretamente pela interface.
 
 ---
 
-# 👨‍💻 Autor
+## 📊 Exemplo de relatório exportado
+
+O endpoint de relatório de lucro por caminhão gera uma planilha Excel com aba de resumo executivo (cards de indicadores, gráficos de pizza de composição do frete e despesas por categoria) e abas detalhadas de fretes e despesas, com filtro e totalizador dinâmico.
+
+```
+GET /api/reports/vehicle/{vehicleId}/profit/export?startDate=2026-08-11&endDate=2026-08-25
+```
+
+---
+
+## 🗺️ Roadmap
+
+- [x] CRUD completo de motoristas, veículos, lojas/rotas e fretes
+- [x] Autenticação JWT e controle de acesso por papel
+- [x] Módulo de despesas operacionais
+- [x] Relatório quinzenal por motorista
+- [x] Relatório de lucro líquido por caminhão, com exportação em Excel
+- [x] Documentação interativa via Swagger
+- [ ] Integração com WhatsApp Business Platform para registro de fretes por mensagem de texto
+- [ ] Interpretação de linguagem natural via LLM (a IA interpreta a mensagem, o backend valida e decide, nunca o inverso)
+- [ ] Deploy em produção
+
+---
+
+## 👤 Autor
 
 **Yago Siqueira**
+Estudante de Análise e Desenvolvimento de Sistemas, em transição para backend Java.
 
-Projeto desenvolvido como parte da minha jornada de aprendizado em desenvolvimento de software, com foco em **Backend Java, APIs REST, bancos de dados, segurança, cloud, automação e inteligência artificial**.
-
----
-
-## ⭐ Objetivo do projeto
-
-Mais do que construir uma aplicação, o objetivo do FreteFlow é transformar um problema real em uma solução tecnológica, aplicando boas práticas de engenharia de software e documentando todo o processo de desenvolvimento.
-
+[LinkedIn](https://www.linkedin.com/in/yago-machado-siqueira/) · [GitHub](https://github.com/yagosiqueira-dev)
