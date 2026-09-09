@@ -5,6 +5,8 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -28,9 +30,14 @@ public class Freight {
     @JoinColumn(name = "vehicle_id", nullable = false)
     private Vehicle vehicle;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "store_id", nullable = false)
-    private Store store;
+    @Builder.Default
+    @ManyToMany
+    @JoinTable(
+            name = "tb_freight_store",
+            joinColumns = @JoinColumn(name = "freight_id"),
+            inverseJoinColumns = @JoinColumn(name = "store_id")
+    )
+    private List<Store> stores= new ArrayList<>();
 
     @Column(name = "freight_value", nullable = false, precision = 10, scale = 2)
     private BigDecimal freightValue;

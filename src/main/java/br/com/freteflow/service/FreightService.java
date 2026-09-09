@@ -18,7 +18,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,49 +37,48 @@ public class FreightService {
         Driver driver = driverRepository.findById(request.driverId())
                 .orElseThrow(() -> new DriverNotFoundException(request.driverId()));
 
-        if (!driver.isEnabled()) {
-            throw new InactiveResourceException("Motorista");
-        }
+        if (!driver.isEnabled()) throw new InactiveResourceException("Motorista");
 
         Vehicle vehicle = vehicleRepository.findById(request.vehicleId())
                 .orElseThrow(() -> new VehicleNotFoundException(request.vehicleId()));
 
-        if (!vehicle.isEnabled()) {
-            throw new InactiveResourceException("Veículo");
-        }
+        if (!vehicle.isEnabled()) throw new InactiveResourceException("Veículo");
 
-        Store store = storeRepository.findById(request.storeId())
-                .orElseThrow(() -> new StoreNotFoundException(request.storeId()));
+        List<Store> stores = request.storeIds().stream()
+                .map(id -> storeRepository.findById(id).orElseThrow(() -> new StoreNotFoundException(id)))
+                .collect(Collectors.toList());
 
-        if (!store.isEnabled()) {
-            throw new InactiveResourceException("Loja");
-        }
+        stores.forEach(store -> {
+            if (!store.isEnabled()) throw new InactiveResourceException("Loja: " + store.getName());
+        });
+
+        BigDecimal maxFreightValue = stores.stream()
+                .map(Store::getDefaultValue)
+                .max(BigDecimal::compareTo)
+                .orElse(BigDecimal.ZERO);
 
         Freight freight = Freight.builder()
                 .driver(driver)
                 .vehicle(vehicle)
-                .store(store)
-                .freightValue(store.getDefaultValue())
+                .stores(stores)
+                .freightValue(maxFreightValue)
                 .freightDate(request.freightDate())
                 .status(FreightStatus.DELIVERED)
                 .build();
 
         Freight saved = freightRepository.save(freight);
-
         return FreightResponseDTO.fromEntity(saved);
     }
 
     @Transactional(readOnly = true)
     public Page<FreightResponseDTO> listFreights(Pageable pageable) {
-        return freightRepository.findAll(pageable)
-                .map(FreightResponseDTO::fromEntity);
+        return freightRepository.findAll(pageable).map(FreightResponseDTO::fromEntity);
     }
 
     @Transactional(readOnly = true)
     public FreightResponseDTO findById(UUID id) {
         Freight freight = freightRepository.findById(id)
                 .orElseThrow(() -> new FreightNotFoundException(id));
-
         return FreightResponseDTO.fromEntity(freight);
     }
 
@@ -88,32 +90,33 @@ public class FreightService {
         Driver driver = driverRepository.findById(request.driverId())
                 .orElseThrow(() -> new DriverNotFoundException(request.driverId()));
 
-        if (!driver.isEnabled()) {
-            throw new InactiveResourceException("Motorista");
-        }
+        if (!driver.isEnabled()) throw new InactiveResourceException("Motorista");
 
         Vehicle vehicle = vehicleRepository.findById(request.vehicleId())
                 .orElseThrow(() -> new VehicleNotFoundException(request.vehicleId()));
 
-        if (!vehicle.isEnabled()) {
-            throw new InactiveResourceException("Veículo");
-        }
+        if (!vehicle.isEnabled()) throw new InactiveResourceException("Veículo");
 
-        Store store = storeRepository.findById(request.storeId())
-                .orElseThrow(() -> new StoreNotFoundException(request.storeId()));
+        List<Store> stores = request.storeIds().stream()
+                .map(storeId -> storeRepository.findById(storeId).orElseThrow(() -> new StoreNotFoundException(storeId)))
+                .collect(Collectors.toList());
 
-        if (!store.isEnabled()) {
-            throw new InactiveResourceException("Loja");
-        }
+        stores.forEach(store -> {
+            if (!store.isEnabled()) throw new InactiveResourceException("Loja: " + store.getName());
+        });
+
+        BigDecimal maxFreightValue = stores.stream()
+                .map(Store::getDefaultValue)
+                .max(BigDecimal::compareTo)
+                .orElse(BigDecimal.ZERO);
 
         freight.setDriver(driver);
         freight.setVehicle(vehicle);
-        freight.setStore(store);
-        freight.setFreightValue(store.getDefaultValue());
+        freight.setStores(stores);
+        freight.setFreightValue(maxFreightValue);
         freight.setFreightDate(request.freightDate());
 
         Freight updated = freightRepository.save(freight);
-
         return FreightResponseDTO.fromEntity(updated);
     }
 
@@ -128,7 +131,6 @@ public class FreightService {
 
         freight.setStatus(newStatus);
         Freight updated = freightRepository.save(freight);
-
         return FreightResponseDTO.fromEntity(updated);
     }
 }
