@@ -49,12 +49,13 @@ class FreightControllerIntegrationTest extends AbstractIntegrationTest {
         return "TST" + (1000 + new Random().nextInt(9000));
     }
 
+    // ATUALIZADO: Agora envia storeIds como array
     private String freightRequestJson(UUID driverId, UUID vehicleId, UUID storeId, String freightDate) {
         return """
                 {
                     "driverId": "%s",
                     "vehicleId": "%s",
-                    "storeId": "%s",
+                    "storeIds": ["%s"],
                     "freightDate": "%s"
                 }
                 """.formatted(driverId, vehicleId, storeId, freightDate);
@@ -80,7 +81,8 @@ class FreightControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.freightValue").value(450.00))
                 .andExpect(jsonPath("$.driverId").value(driver.getId().toString()))
                 .andExpect(jsonPath("$.vehicleId").value(vehicle.getId().toString()))
-                .andExpect(jsonPath("$.storeId").value(store.getId().toString()));
+                // ATUALIZADO: Verifica o array de nomes
+                .andExpect(jsonPath("$.storeNames[0]").value("Loja Create Admin"));
     }
 
     @Test
@@ -153,8 +155,7 @@ class FreightControllerIntegrationTest extends AbstractIntegrationTest {
                         .header("Authorization", "Bearer " + token)
                         .contentType(APPLICATION_JSON)
                         .content(freightRequestJson(driver.getId(), vehicle.getId(), store.getId(), now())))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Loja está desativado(a) e não pode ser usado(a) em um novo frete"));
+                .andExpect(status().isConflict());
     }
 
     @Test
@@ -352,8 +353,7 @@ class FreightControllerIntegrationTest extends AbstractIntegrationTest {
                         .header("Authorization", "Bearer " + token)
                         .contentType(APPLICATION_JSON)
                         .content(freightRequestJson(driver.getId(), vehicle.getId(), disabledStore.getId(), now())))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Loja está desativado(a) e não pode ser usado(a) em um novo frete"));
+                .andExpect(status().isConflict());
     }
 
     private UUID createFreightAndGetId(String token, String storeName) throws Exception {

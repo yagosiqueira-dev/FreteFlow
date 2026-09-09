@@ -65,11 +65,12 @@ class ReportControllerIntegrationTest extends AbstractIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         String storeId = storeResponse.split("\"id\":\"")[1].split("\"")[0];
 
+        // ATUALIZADO
         String freightPayload = """
                 {
                   "driverId": "%s",
                   "vehicleId": "%s",
-                  "storeId": "%s",
+                  "storeIds": ["%s"],
                   "freightValue": 850.00,
                   "freightDate": "2026-08-15T08:00:00"
                 }
@@ -94,6 +95,7 @@ class ReportControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.freights[0].fullRoute").value("Carapicuiba"))
                 .andExpect(jsonPath("$.freights[0].value").value(500.00));
     }
+
     @Test
     void shouldCalculateVehicleProfitCorrectly() throws Exception {
         String adminToken = createAdminAndGetToken("admin-profit-1@freteflow.com");
@@ -103,11 +105,12 @@ class ReportControllerIntegrationTest extends AbstractIntegrationTest {
         Vehicle vehicle = createVehicle("PRF1A23", true);
         Store store = createStore("Loja Lucro Teste", new BigDecimal("1000.00"), true);
 
+        // ATUALIZADO
         String freightPayload = """
             {
               "driverId": "%s",
               "vehicleId": "%s",
-              "storeId": "%s",
+              "storeIds": ["%s"],
               "freightDate": "2026-08-15T08:00:00"
             }
             """.formatted(driver.getId(), vehicle.getId(), store.getId());
@@ -167,6 +170,7 @@ class ReportControllerIntegrationTest extends AbstractIntegrationTest {
                         .param("endDate", "2026-08-25"))
                 .andExpect(status().isNotFound());
     }
+
     @Test
     void shouldReturnNotFoundForNonExistentDriverInBiWeeklyReport() throws Exception {
         String token = createAdminAndGetToken("admin-report-2@freteflow.com");
@@ -203,20 +207,22 @@ class ReportControllerIntegrationTest extends AbstractIntegrationTest {
         Store storeA = createStore("Loja Multi A", new BigDecimal("800.00"), true);
         Store storeB = createStore("Loja Multi B", new BigDecimal("650.00"), true);
 
+        // ATUALIZADO
         String freightPayloadA = """
             {
               "driverId": "%s",
               "vehicleId": "%s",
-              "storeId": "%s",
+              "storeIds": ["%s"],
               "freightDate": "2026-08-12T08:00:00"
             }
             """.formatted(driver.getId(), vehicle.getId(), storeA.getId());
 
+        // ATUALIZADO
         String freightPayloadB = """
             {
               "driverId": "%s",
               "vehicleId": "%s",
-              "storeId": "%s",
+              "storeIds": ["%s"],
               "freightDate": "2026-08-18T08:00:00"
             }
             """.formatted(driver.getId(), vehicle.getId(), storeB.getId());
@@ -269,20 +275,22 @@ class ReportControllerIntegrationTest extends AbstractIntegrationTest {
         Vehicle vehicle = createVehicle("OUT1S23", true);
         Store store = createStore("Loja Fora do Periodo", new BigDecimal("900.00"), true);
 
+        // ATUALIZADO
         String freightInsideRange = """
             {
               "driverId": "%s",
               "vehicleId": "%s",
-              "storeId": "%s",
+              "storeIds": ["%s"],
               "freightDate": "2026-08-15T08:00:00"
             }
             """.formatted(driver.getId(), vehicle.getId(), store.getId());
 
+        // ATUALIZADO
         String freightOutsideRange = """
             {
               "driverId": "%s",
               "vehicleId": "%s",
-              "storeId": "%s",
+              "storeIds": ["%s"],
               "freightDate": "2026-09-01T08:00:00"
             }
             """.formatted(driver.getId(), vehicle.getId(), store.getId());
