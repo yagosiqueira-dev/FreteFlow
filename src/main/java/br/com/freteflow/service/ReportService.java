@@ -6,6 +6,7 @@ import br.com.freteflow.dto.report.FreightReportItemDTO;
 import br.com.freteflow.dto.report.FreightSummaryDTO;
 import br.com.freteflow.dto.report.VehicleProfitReportDTO;
 import br.com.freteflow.entity.Driver;
+import br.com.freteflow.entity.Store;
 import br.com.freteflow.entity.Vehicle;
 import br.com.freteflow.exception.DriverNotFoundException;
 import br.com.freteflow.exception.VehicleNotFoundException;
@@ -22,6 +23,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -43,12 +45,19 @@ public class ReportService {
         var freights = freightRepository.findByDriverIdAndFreightDateBetweenOrderByFreightDateAsc(driverId, startDateTime, endDateTime);
 
         List<FreightReportItemDTO> items = freights.stream()
-                .map(f -> new FreightReportItemDTO(
-                        f.getFreightDate().toLocalDate(),
-                        f.getStore().getOrigin(),
-                        f.getStore().getDestination(),
-                        f.getFreightValue()
-                ))
+                .map(f -> {
+                    String origin = f.getStores().isEmpty() ? "" : f.getStores().get(0).getOrigin();
+                    String destinations = f.getStores().stream()
+                            .map(Store::getDestination)
+                            .collect(Collectors.joining(", "));
+
+                    return new FreightReportItemDTO(
+                            f.getFreightDate().toLocalDate(),
+                            origin,
+                            destinations,
+                            f.getFreightValue()
+                    );
+                })
                 .toList();
 
         BigDecimal total = items.stream()
@@ -57,6 +66,7 @@ public class ReportService {
 
         return new BiWeeklyReportDTO(startDate, endDate, driver.getName(), total, items);
     }
+
     @Transactional(readOnly = true)
     public VehicleProfitReportDTO generateVehicleProfitReport(UUID vehicleId, LocalDate startDate, LocalDate endDate) {
 
@@ -73,12 +83,18 @@ public class ReportService {
                 vehicleId, startDate, endDate);
 
         List<FreightSummaryDTO> freightItems = freights.stream()
-                .map(f -> new FreightSummaryDTO(
-                        f.getFreightDate().toLocalDate(),
-                        f.getDriver().getName(),
-                        f.getStore().getName(),
-                        f.getFreightValue()
-                ))
+                .map(f -> {
+                    String storeNames = f.getStores().stream()
+                            .map(Store::getName)
+                            .collect(Collectors.joining(", "));
+
+                    return new FreightSummaryDTO(
+                            f.getFreightDate().toLocalDate(),
+                            f.getDriver().getName(),
+                            storeNames,
+                            f.getFreightValue()
+                    );
+                })
                 .toList();
 
         List<ExpenseSummaryDTO> expenseItems = expenses.stream()
