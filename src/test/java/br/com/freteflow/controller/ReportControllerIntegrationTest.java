@@ -207,7 +207,6 @@ class ReportControllerIntegrationTest extends AbstractIntegrationTest {
         Store storeA = createStore("Loja Multi A", new BigDecimal("800.00"), true);
         Store storeB = createStore("Loja Multi B", new BigDecimal("650.00"), true);
 
-        // ATUALIZADO
         String freightPayloadA = """
             {
               "driverId": "%s",
@@ -217,7 +216,6 @@ class ReportControllerIntegrationTest extends AbstractIntegrationTest {
             }
             """.formatted(driver.getId(), vehicle.getId(), storeA.getId());
 
-        // ATUALIZADO
         String freightPayloadB = """
             {
               "driverId": "%s",
@@ -275,7 +273,6 @@ class ReportControllerIntegrationTest extends AbstractIntegrationTest {
         Vehicle vehicle = createVehicle("OUT1S23", true);
         Store store = createStore("Loja Fora do Periodo", new BigDecimal("900.00"), true);
 
-        // ATUALIZADO
         String freightInsideRange = """
             {
               "driverId": "%s",
@@ -285,7 +282,6 @@ class ReportControllerIntegrationTest extends AbstractIntegrationTest {
             }
             """.formatted(driver.getId(), vehicle.getId(), store.getId());
 
-        // ATUALIZADO
         String freightOutsideRange = """
             {
               "driverId": "%s",
@@ -312,5 +308,33 @@ class ReportControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalFreightValue").value(900.00))
                 .andExpect(jsonPath("$.freights.length()").value(1));
+    }
+    @Test
+    void shouldUseHighestStoreValueNotSumWhenMultipleStoresInSameFreight() throws Exception {
+        String token = createAdminAndGetToken("admin-multistore-1@freteflow.com");
+
+        Driver driver = createDriver("39053344705", true);
+        Vehicle vehicle = createVehicle("MST1O23", true);
+        Store storeLow = createStore("Loja Baixa", new BigDecimal("500.00"), true);
+        Store storeHigh = createStore("Loja Alta", new BigDecimal("1200.00"), true);
+        Store storeMid = createStore("Loja Media", new BigDecimal("800.00"), true);
+
+        String freightPayload = """
+            {
+              "driverId": "%s",
+              "vehicleId": "%s",
+              "storeIds": ["%s", "%s", "%s"],
+              "freightDate": "2026-08-15T08:00:00"
+            }
+            """.formatted(driver.getId(), vehicle.getId(),
+                storeLow.getId(), storeHigh.getId(), storeMid.getId());
+
+        mockMvc.perform(post("/api/freights")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content(freightPayload))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.freightValue").value(1200.00))
+                .andExpect(jsonPath("$.storeNames.length()").value(3));
     }
 }

@@ -371,4 +371,56 @@ class FreightControllerIntegrationTest extends AbstractIntegrationTest {
         String id = com.jayway.jsonpath.JsonPath.read(response, "$.id");
         return UUID.fromString(id);
     }
+    @Test
+    void shouldUseHighestStoreValueWhenMultipleStoresInSameFreight() throws Exception {
+        String token = createAdminAndGetToken("admin-freight-multistore-1@test.com");
+        Driver driver = createDriver(generateValidCpf(), true);
+        Vehicle vehicle = createVehicle(uniquePlate(), true);
+        Store storeLow = createStore("Loja Baixa Multi", new BigDecimal("500.00"), true);
+        Store storeHigh = createStore("Loja Alta Multi", new BigDecimal("1200.00"), true);
+        Store storeMid = createStore("Loja Media Multi", new BigDecimal("800.00"), true);
+
+        String payload = """
+            {
+                "driverId": "%s",
+                "vehicleId": "%s",
+                "storeIds": ["%s", "%s", "%s"],
+                "freightDate": "%s"
+            }
+            """.formatted(driver.getId(), vehicle.getId(),
+                storeLow.getId(), storeHigh.getId(), storeMid.getId(), now());
+
+        mockMvc.perform(post("/api/freights")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.freightValue").value(1200.00))
+                .andExpect(jsonPath("$.storeNames.length()").value(3));
+    }
+    @Test
+    void shouldReturnConflict_whenStoresHaveDifferentOrigins() throws Exception {
+        String token = createAdminAndGetToken("admin-freight-mixed-origin@test.com");
+        Driver driver = createDriver(generateValidCpf(), true);
+        Vehicle vehicle = createVehicle(uniquePlate(), true);
+
+        Store storeCeasa = createStore("Loja Ceasa Mixed", "Ceasa", "Guarapiranga", new BigDecimal("500.00"), true);
+        Store storeItaqua = createStore("Loja Itaqua Mixed", "Itaqua", "Sorocaba", new BigDecimal("800.00"), true);
+
+        String payload = """
+            {
+                "driverId": "%s",
+                "vehicleId": "%s",
+                "storeIds": ["%s", "%s"],
+                "freightDate": "%s"
+            }
+            """.formatted(driver.getId(), vehicle.getId(),
+                storeCeasa.getId(), storeItaqua.getId(), now());
+
+        mockMvc.perform(post("/api/freights")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isConflict());
+    }
 }

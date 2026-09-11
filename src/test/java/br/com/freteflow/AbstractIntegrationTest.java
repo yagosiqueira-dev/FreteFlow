@@ -131,4 +131,17 @@ public abstract class AbstractIntegrationTest {
         store.setEnabled(enabled);
         return storeRepository.save(store);
     }
+
+    protected Store createStore(String name, String origin, String destination, BigDecimal defaultValue, boolean enabled) {
+        Store store = Store.builder()
+                .name(name)
+                .origin(origin)
+                .destination(destination)
+                .defaultValue(defaultValue)
+                .build();
+
+        store = storeRepository.save(store);
+        store.setEnabled(enabled);
+        return storeRepository.save(store);
+    }
 }
