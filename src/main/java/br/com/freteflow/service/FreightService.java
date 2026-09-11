@@ -31,6 +31,16 @@ public class FreightService {
     private final DriverRepository driverRepository;
     private final VehicleRepository vehicleRepository;
     private final StoreRepository storeRepository;
+    private void validateSameOrigin(List<Store> stores) {
+        long distinctOrigins = stores.stream()
+                .map(Store::getOrigin)
+                .distinct()
+                .count();
+
+        if (distinctOrigins > 1) {
+            throw new MixedStoreOriginException();
+        }
+    }
 
     @Transactional
     public FreightResponseDTO createFreight(FreightRequestDTO request) {
@@ -51,6 +61,7 @@ public class FreightService {
         stores.forEach(store -> {
             if (!store.isEnabled()) throw new InactiveResourceException("Loja: " + store.getName());
         });
+        validateSameOrigin(stores);
 
         BigDecimal maxFreightValue = stores.stream()
                 .map(Store::getDefaultValue)
@@ -104,6 +115,7 @@ public class FreightService {
         stores.forEach(store -> {
             if (!store.isEnabled()) throw new InactiveResourceException("Loja: " + store.getName());
         });
+        validateSameOrigin(stores);
 
         BigDecimal maxFreightValue = stores.stream()
                 .map(Store::getDefaultValue)
