@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme {
+  --color-asphalt: #1E2328;
+  --color-concrete: #EFEFEC;
+  --color-route-orange: #E8752C;
+  --color-highway-green: #3C7A5C;
+  --color-alert-red: #C13B3B;
+  --color-ink: #1B1F22;
+
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "IBM Plex Sans", sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-concrete);
+  color: var(--color-ink);
+}
