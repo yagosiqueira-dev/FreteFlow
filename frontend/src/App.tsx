@@ -5,6 +5,8 @@ import Layout from "./components/Layout/Layout";
 import { PrivateRoute } from "./components/PrivateRoute";
 import Vehicles from "./pages/Vehicles/Vehicles";
 import Drivers from "./pages/Drivers/Drivers";
+import Stores from "./pages/Stores/Stores";
+
 
 function App() {
   return (
@@ -22,6 +24,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/veiculos" element={<Vehicles />} />
         <Route path="/motoristas" element={<Drivers />} />
+        <Route path="/lojas" element={<Stores />} />
       </Route>
     </Routes>
   );
