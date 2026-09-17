@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.util.UUID;
 
@@ -30,18 +31,24 @@ public class StoreController {
         return ResponseEntity.created(location).body(created);
     }
 
-    @GetMapping
-    public ResponseEntity<Page<StoreResponseDTO>> list(
-            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
-
-        Page<StoreResponseDTO> stores = storeService.listStores(pageable);
-        return ResponseEntity.ok(stores);
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<StoreResponseDTO> findById(@PathVariable UUID id) {
         StoreResponseDTO store = storeService.findById(id);
         return ResponseEntity.ok(store);
+    }
+    @GetMapping
+    public ResponseEntity<Page<StoreResponseDTO>> list(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String origin,
+            @RequestParam(required = false) String destination,
+            @RequestParam(required = false) Boolean enabled,
+            @RequestParam(required = false) BigDecimal minValue,
+            @RequestParam(required = false) BigDecimal maxValue,
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
+
+        Page<StoreResponseDTO> stores = storeService.listStores(
+                name, origin, destination, enabled, minValue, maxValue, pageable);
+        return ResponseEntity.ok(stores);
     }
 
     @PutMapping("/{id}")

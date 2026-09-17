@@ -11,6 +11,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.jpa.domain.Specification;
+import java.math.BigDecimal;
+import br.com.freteflow.repository.specification.StoreSpecification;
 
 import java.util.UUID;
 
@@ -38,11 +41,6 @@ public class StoreService {
         return StoreResponseDTO.fromEntity(saved);
     }
 
-    @Transactional(readOnly = true)
-    public Page<StoreResponseDTO> listStores(Pageable pageable) {
-        return storeRepository.findAll(pageable)
-                .map(StoreResponseDTO::fromEntity);
-    }
 
     @Transactional(readOnly = true)
     public StoreResponseDTO findById(UUID id) {
@@ -89,5 +87,21 @@ public class StoreService {
         Store updated = storeRepository.save(store);
 
         return StoreResponseDTO.fromEntity(updated);
+    }
+    @Transactional(readOnly = true)
+    public Page<StoreResponseDTO> listStores(
+            String name, String origin, String destination,
+            Boolean enabled, BigDecimal minValue, BigDecimal maxValue,
+            Pageable pageable) {
+
+        Specification<Store> spec = Specification
+                .where(StoreSpecification.nameContains(name))
+                .and(StoreSpecification.originContains(origin))
+                .and(StoreSpecification.destinationContains(destination))
+                .and(StoreSpecification.enabledEquals(enabled))
+                .and(StoreSpecification.defaultValueBetween(minValue, maxValue));
+
+        return storeRepository.findAll(spec, pageable)
+                .map(StoreResponseDTO::fromEntity);
     }
 }

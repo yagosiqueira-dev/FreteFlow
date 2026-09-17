@@ -170,4 +170,95 @@ class StoreControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.enabled").value(true));
     }
+
+    @Test
+    void shouldFilterStoresByNamePartialMatch() throws Exception {
+        String token = createAdminAndGetToken("admin-store-filter-1@freteflow.com");
+
+        mockMvc.perform(post("/api/stores")
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .content("""
+                        {
+                          "name": "Loja Filtro Nome Unico",
+                          "origin": "Origem X",
+                          "destination": "Destino X",
+                          "defaultValue": 500.00
+                        }
+                        """));
+
+        mockMvc.perform(get("/api/stores")
+                        .header("Authorization", "Bearer " + token)
+                        .param("name", "filtro nome"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[?(@.name=='Loja Filtro Nome Unico')]").exists());
+    }
+
+    @Test
+    void shouldFilterStoresByEnabledStatus() throws Exception {
+        String token = createAdminAndGetToken("admin-store-filter-2@freteflow.com");
+
+        String response = mockMvc.perform(post("/api/stores")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "name": "Loja Filtro Status",
+                                  "origin": "Origem Y",
+                                  "destination": "Destino Y",
+                                  "defaultValue": 600.00
+                                }
+                                """))
+                .andReturn().getResponse().getContentAsString();
+
+        String id = response.split("\"id\":\"")[1].split("\"")[0];
+
+        mockMvc.perform(delete("/api/stores/" + id)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/stores")
+                        .header("Authorization", "Bearer " + token)
+                        .param("enabled", "false")
+                        .param("size", "100"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[?(@.name=='Loja Filtro Status')].enabled")
+                        .value(org.hamcrest.Matchers.contains(false)));
+    }
+
+    @Test
+    void shouldFilterStoresByValueRange() throws Exception {
+        String token = createAdminAndGetToken("admin-store-filter-3@freteflow.com");
+
+        mockMvc.perform(post("/api/stores")
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .content("""
+                        {
+                          "name": "Loja Faixa De Valor",
+                          "origin": "Origem Z",
+                          "destination": "Destino Z",
+                          "defaultValue": 1234.56
+                        }
+                        """));
+
+        mockMvc.perform(get("/api/stores")
+                        .header("Authorization", "Bearer " + token)
+                        .param("minValue", "1000")
+                        .param("maxValue", "1500")
+                        .param("size", "100"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[?(@.name=='Loja Faixa De Valor')]").exists());
+    }
+
+    @Test
+    void shouldReturnEmptyWhenFilterMatchesNothing() throws Exception {
+        String token = createAdminAndGetToken("admin-store-filter-4@freteflow.com");
+
+        mockMvc.perform(get("/api/stores")
+                        .header("Authorization", "Bearer " + token)
+                        .param("name", "nome-que-nao-existe-em-lugar-nenhum-xyz"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isEmpty());
+    }
 }
