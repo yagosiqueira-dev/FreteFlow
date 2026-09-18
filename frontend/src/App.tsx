@@ -6,6 +6,7 @@ import { PrivateRoute } from "./components/PrivateRoute";
 import Vehicles from "./pages/Vehicles/Vehicles";
 import Drivers from "./pages/Drivers/Drivers";
 import Stores from "./pages/Stores/Stores";
+import Freights from "./pages/Freights/Freights";
 
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
         <Route path="/veiculos" element={<Vehicles />} />
         <Route path="/motoristas" element={<Drivers />} />
         <Route path="/lojas" element={<Stores />} />
+        <Route path="/fretes" element={<Freights />} />
       </Route>
     </Routes>
   );
