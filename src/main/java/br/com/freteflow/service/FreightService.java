@@ -17,6 +17,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import br.com.freteflow.entity.User;
+import br.com.freteflow.entity.UserRole;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -134,15 +137,23 @@ public class FreightService {
 
     @Transactional
     public FreightResponseDTO updateStatus(UUID id, FreightStatus newStatus) {
-        Freight freight = freightRepository.findById(id)
-                .orElseThrow(() -> new FreightNotFoundException(id));
+         Freight freight = freightRepository.findById(id)
+            .orElseThrow(() -> new FreightNotFoundException(id));
 
-        if (!freight.getStatus().canTransitionTo(newStatus)) {
-            throw new InvalidFreightStatusTransitionException(freight.getStatus(), newStatus);
-        }
+        if (!isAdmin() && !freight.getStatus().canTransitionTo(newStatus)) {
+        throw new InvalidFreightStatusTransitionException(freight.getStatus(), newStatus);
+         }
 
         freight.setStatus(newStatus);
         Freight updated = freightRepository.save(freight);
         return FreightResponseDTO.fromEntity(updated);
+    }
+
+    private boolean isAdmin() {
+    User currentUser = (User) SecurityContextHolder.getContext()
+            .getAuthentication()
+            .getPrincipal();
+
+        return currentUser.getRole() == UserRole.ADMIN;
     }
 }
