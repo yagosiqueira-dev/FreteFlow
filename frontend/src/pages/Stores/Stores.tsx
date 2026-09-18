@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { listStores, createStore, deactivateStore, activateStore } from "../../api/stores";
 import type { StoreRequest } from "../../types/store";
-import { Plus, Power, PowerOff, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Power, PowerOff, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import type { StoreFilters } from "../../api/stores";
 
 function formatCurrency(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -14,11 +15,12 @@ export default function Stores() {
   const [formError, setFormError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
+  const [filters, setFilters] = useState<StoreFilters>({});
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError } = useQuery({
-  queryKey: ["stores", page],
-  queryFn: () => listStores(page),
+  queryKey: ["stores", page, filters],
+  queryFn: () => listStores(page, filters),
 });
 
   const createMutation = useMutation({
@@ -82,6 +84,35 @@ export default function Stores() {
     createMutation.mutate(payload);
   }
 
+  function handleFilterSubmit(e: React.FormEvent<HTMLFormElement>) {
+  e.preventDefault();
+  const formData = new FormData(e.currentTarget);
+
+  const name = formData.get("filterName") as string;
+  const origin = formData.get("filterOrigin") as string;
+  const destination = formData.get("filterDestination") as string;
+  const status = formData.get("filterStatus") as string;
+  const minValue = formData.get("filterMinValue") as string;
+  const maxValue = formData.get("filterMaxValue") as string;
+
+  setFilters({
+    name: name || undefined,
+    origin: origin || undefined,
+    destination: destination || undefined,
+    enabled: status === "" ? undefined : status === "true",
+    minValue: minValue ? Number(minValue) : undefined,
+    maxValue: maxValue ? Number(maxValue) : undefined,
+  });
+  setPage(0);
+}
+
+function handleClearFilters(e: React.MouseEvent<HTMLButtonElement>) {
+  e.preventDefault();
+  (e.currentTarget.closest("form") as HTMLFormElement)?.reset();
+  setFilters({});
+  setPage(0);
+}
+
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
@@ -99,6 +130,62 @@ export default function Stores() {
           Nova loja
         </button>
       </div>
+
+      <form
+  onSubmit={handleFilterSubmit}
+  className="bg-white p-4 rounded mb-6 grid grid-cols-6 gap-3 items-end"
+>
+  <div className="col-span-2">
+    <label className="block text-xs text-ink/60 mb-1">Nome</label>
+    <input name="filterName" placeholder="Buscar por nome" className="w-full border border-ink/20 px-3 py-1.5 rounded text-sm" />
+  </div>
+
+  <div>
+    <label className="block text-xs text-ink/60 mb-1">Origem</label>
+    <input name="filterOrigin" placeholder="Origem" className="w-full border border-ink/20 px-3 py-1.5 rounded text-sm" />
+  </div>
+
+  <div>
+    <label className="block text-xs text-ink/60 mb-1">Destino</label>
+    <input name="filterDestination" placeholder="Destino" className="w-full border border-ink/20 px-3 py-1.5 rounded text-sm" />
+  </div>
+
+  <div>
+    <label className="block text-xs text-ink/60 mb-1">Valor mín.</label>
+    <input name="filterMinValue" type="number" step="0.01" placeholder="R$" className="w-full border border-ink/20 px-3 py-1.5 rounded text-sm" />
+  </div>
+
+  <div>
+    <label className="block text-xs text-ink/60 mb-1">Valor máx.</label>
+    <input name="filterMaxValue" type="number" step="0.01" placeholder="R$" className="w-full border border-ink/20 px-3 py-1.5 rounded text-sm" />
+  </div>
+
+  <div>
+    <label className="block text-xs text-ink/60 mb-1">Status</label>
+    <select name="filterStatus" defaultValue="" className="w-full border border-ink/20 px-3 py-1.5 rounded text-sm">
+      <option value="">Todos</option>
+      <option value="true">Ativo</option>
+      <option value="false">Inativo</option>
+    </select>
+  </div>
+
+  <div className="col-span-6 flex gap-2 justify-end">
+    <button
+      onClick={handleClearFilters}
+      type="button"
+      className="px-4 py-1.5 border border-ink/20 rounded text-sm text-ink/70"
+    >
+      Limpar
+    </button>
+    <button
+      type="submit"
+      className="flex items-center gap-2 px-4 py-1.5 bg-asphalt text-white rounded text-sm font-medium"
+    >
+      <Search size={14} />
+      Filtrar
+    </button>
+  </div>
+</form>
 
       {actionError && (
         <div className="mb-4 px-4 py-3 bg-alert-red/10 border border-alert-red/30 rounded text-alert-red text-sm">

@@ -2,9 +2,18 @@ import api from "./axios";
 import type { Store, StoreRequest } from "../types/store";
 import type { PagedResponse } from "../types/vehicle";
 
-export async function listStores(page: number = 0): Promise<PagedResponse<Store>> {
+export interface StoreFilters {
+  name?: string;
+  origin?: string;
+  destination?: string;
+  enabled?: boolean;
+  minValue?: number;
+  maxValue?: number;
+}
+
+export async function listStores(page: number = 0, filters: StoreFilters = {}, size: number = 20): Promise<PagedResponse<Store>> {
   const response = await api.get<PagedResponse<Store>>("/api/stores", {
-    params: { page },
+    params: { page, size, ...filters },
   });
   return response.data;
 }
