@@ -1,18 +1,29 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { LayoutDashboard, Truck, Users, Store, Package, FileBarChart, LogOut } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  Truck, 
+  Users, 
+  Store, 
+  Package, 
+  FileBarChart, 
+  LogOut,
+  Users as UsersIcon 
+} from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
-const navItems = [
-  { to: "/dashboard", label: "Início", icon: LayoutDashboard },
-  { to: "/veiculos", label: "Veículos", icon: Truck },
-  { to: "/motoristas", label: "Motoristas", icon: Users },
-  { to: "/lojas", label: "Lojas", icon: Store },
-  { to: "/fretes", label: "Fretes", icon: Package },
-  { to: "/relatorios", label: "Relatórios", icon: FileBarChart },
-];
-
 export default function Layout() {
-  const { logout } = useAuth();
+  
+  const { logout, role } = useAuth();
+
+  const navItems = [
+    { to: "/dashboard", label: "Início", icon: LayoutDashboard },
+    { to: "/veiculos", label: "Veículos", icon: Truck },
+    { to: "/motoristas", label: "Motoristas", icon: Users },
+    { to: "/lojas", label: "Lojas", icon: Store },
+    { to: "/fretes", label: "Fretes", icon: Package },
+    { to: "/relatorios", label: "Relatórios", icon: FileBarChart },
+    ...(role === "ADMIN" ? [{ to: "/usuarios", label: "Usuários", icon: UsersIcon }] : []),
+  ];
 
   return (
     <div className="min-h-screen flex">
@@ -22,7 +33,6 @@ export default function Layout() {
             FreteFlow
           </span>
         </div>
-
         <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
           {navItems.map(({ to, label, icon: Icon }) => (
             <NavLink
