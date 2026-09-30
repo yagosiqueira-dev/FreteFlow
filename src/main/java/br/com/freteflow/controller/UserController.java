@@ -66,4 +66,11 @@ public class UserController {
         UserResponseDTO promoted = userService.promoteToAdmin(id);
         return ResponseEntity.ok(promoted);
     }
+
+    @PatchMapping("/{id}/demote")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponseDTO> demoteToOperator(@PathVariable UUID id) {
+        UserResponseDTO demoted = userService.demoteToOperator(id);
+        return ResponseEntity.ok(demoted);
+    }
 }

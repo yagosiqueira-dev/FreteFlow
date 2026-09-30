@@ -5,6 +5,7 @@ import br.com.freteflow.dto.user.UserResponseDTO;
 import br.com.freteflow.entity.User;
 import br.com.freteflow.entity.UserRole;
 import br.com.freteflow.exception.CannotDeactivateSelfException;
+import br.com.freteflow.exception.CannotDemoteSelfException;
 import br.com.freteflow.exception.EmailAlreadyExistsException;
 import br.com.freteflow.exception.UserNotFoundException;
 import br.com.freteflow.repository.UserRepository;
@@ -114,5 +115,20 @@ public class UserService {
                 .getPrincipal();
 
         return currentUser.getId().equals(id);
+    }
+    
+    @Transactional
+    public UserResponseDTO demoteToOperator(UUID id) {  
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new UserNotFoundException(id));
+
+        if (isCurrentUser(id)) {
+            throw new CannotDemoteSelfException();
+        }
+
+        user.setRole(UserRole.OPERATOR);
+        User updated = userRepository.save(user);
+
+        return UserResponseDTO.fromEntity(updated);
     }
 }
