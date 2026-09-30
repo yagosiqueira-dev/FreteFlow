@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { useAuth } from "../../hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -8,6 +7,8 @@ import {
   Play,
   CheckCircle2,
   XCircle,
+  RotateCcw,
+  Search
 } from "lucide-react";
 import { AxiosError } from "axios";
 import {
@@ -15,6 +16,7 @@ import {
   createFreight,
   updateFreightStatus,
 } from "../../api/freights";
+import type { FreightFilters } from "../../api/freights";
 import { listDrivers } from "../../api/drivers";
 import { listVehicles } from "../../api/vehicles";
 import { listStores } from "../../api/stores";
@@ -51,12 +53,13 @@ export default function Freights() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [selectedStores, setSelectedStores] = useState<string[]>([]);
   const [page, setPage] = useState(0);
+  
+  const [filters, setFilters] = useState<FreightFilters>({});
   const queryClient = useQueryClient();
-  const { role } = useAuth();
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["freights", page],
-    queryFn: () => listFreights(page),
+    queryKey: ["freights", page, filters],
+    queryFn: () => listFreights(page, filters),
   });
 
   const { data: driversData } = useQuery({
@@ -154,6 +157,31 @@ export default function Freights() {
     createMutation.mutate(payload);
   }
 
+  function handleFilterSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    const driverName = formData.get("filterDriverName") as string;
+    const status = formData.get("filterStatus") as string;
+    const startDate = formData.get("filterStartDate") as string;
+    const endDate = formData.get("filterEndDate") as string;
+
+    setFilters({
+      driverName: driverName || undefined,
+      status: status === "" ? undefined : (status as FreightStatus),
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+    });
+    setPage(0);
+  }
+
+  function handleClearFilters(e: React.MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
+    (e.currentTarget.closest("form") as HTMLFormElement)?.reset();
+    setFilters({});
+    setPage(0);
+  }
+
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
@@ -169,6 +197,69 @@ export default function Freights() {
           Novo frete
         </button>
       </div>
+
+      <form
+        onSubmit={handleFilterSubmit}
+        className="bg-white p-4 rounded mb-6 grid grid-cols-6 gap-3 items-end border border-ink/10"
+      >
+        <div className="col-span-2">
+          <label className="block text-xs text-ink/60 mb-1">Motorista</label>
+          <input 
+            name="filterDriverName" 
+            placeholder="Buscar por nome" 
+            className="w-full border border-ink/20 px-3 py-1.5 rounded text-sm" 
+          />
+        </div>
+
+        <div className="col-span-2">
+          <label className="block text-xs text-ink/60 mb-1">Data Inicial</label>
+          <input 
+            name="filterStartDate" 
+            type="datetime-local" 
+            className="w-full border border-ink/20 px-3 py-1.5 rounded text-sm" 
+          />
+        </div>
+
+        <div className="col-span-2">
+          <label className="block text-xs text-ink/60 mb-1">Data Final</label>
+          <input 
+            name="filterEndDate" 
+            type="datetime-local" 
+            className="w-full border border-ink/20 px-3 py-1.5 rounded text-sm" 
+          />
+        </div>
+
+        <div className="col-span-2">
+          <label className="block text-xs text-ink/60 mb-1">Status</label>
+          <select 
+            name="filterStatus" 
+            defaultValue="" 
+            className="w-full border border-ink/20 px-3 py-1.5 rounded text-sm"
+          >
+            <option value="">Todos</option>
+            {Object.entries(statusLabels).map(([val, label]) => (
+              <option key={val} value={val}>{label}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="col-span-6 flex gap-2 justify-end">
+          <button
+            onClick={handleClearFilters}
+            type="button"
+            className="px-4 py-1.5 border border-ink/20 rounded text-sm text-ink/70"
+          >
+            Limpar
+          </button>
+          <button
+            type="submit"
+            className="flex items-center gap-2 px-4 py-1.5 bg-asphalt text-white rounded text-sm font-medium"
+          >
+            <Search size={14} />
+            Filtrar
+          </button>
+        </div>
+      </form>
 
       {actionError && (
         <div className="mb-4 px-4 py-3 bg-alert-red/10 border border-alert-red/30 rounded text-alert-red text-sm">
@@ -317,89 +408,21 @@ export default function Freights() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    {role === "ADMIN" ? (
-                      <select
-                        value={freight.status}
-                        onChange={(e) =>
-                          statusMutation.mutate({
-                            id: freight.id,
-                            status: e.target.value as FreightStatus,
-                          })
-                        }
-                        className="text-xs border border-ink/20 rounded px-2 py-1"
-                      >
-                        {(
-                          [
-                            "PENDING",
-                            "IN_PROGRESS",
-                            "DELIVERED",
-                            "CANCELED",
-                          ] as FreightStatus[]
-                        ).map((s) => (
-                          <option key={s} value={s}>
-                            {statusLabels[s]}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div className="flex gap-2">
-                        {freight.status === "PENDING" && (
-                          <>
-                            <button
-                              onClick={() =>
-                                statusMutation.mutate({
-                                  id: freight.id,
-                                  status: "IN_PROGRESS",
-                                })
-                              }
-                              className="text-ink/50 hover:text-route-orange"
-                              title="Iniciar"
-                            >
-                              <Play size={16} />
-                            </button>
-                            <button
-                              onClick={() =>
-                                statusMutation.mutate({
-                                  id: freight.id,
-                                  status: "CANCELED",
-                                })
-                              }
-                              className="text-ink/50 hover:text-alert-red"
-                              title="Cancelar"
-                            >
-                              <XCircle size={16} />
-                            </button>
-                          </>
-                        )}
-                        {freight.status === "IN_PROGRESS" && (
-                          <>
-                            <button
-                              onClick={() =>
-                                statusMutation.mutate({
-                                  id: freight.id,
-                                  status: "DELIVERED",
-                                })
-                              }
-                              className="text-ink/50 hover:text-highway-green"
-                              title="Marcar como entregue"
-                            >
-                              <CheckCircle2 size={16} />
-                            </button>
-                            <button
-                              onClick={() =>
-                                statusMutation.mutate({
-                                  id: freight.id,
-                                  status: "CANCELED",
-                                })
-                              }
-                              className="text-ink/50 hover:text-alert-red"
-                              title="Cancelar"
-                            >
-                              <XCircle size={16} />
-                            </button>
-                          </>
-                        )}
-                        {freight.status === "DELIVERED" && (
+                    <div className="flex gap-2">
+                      {freight.status === "PENDING" && (
+                        <>
+                          <button
+                            onClick={() =>
+                              statusMutation.mutate({
+                                id: freight.id,
+                                status: "IN_PROGRESS",
+                              })
+                            }
+                            className="text-ink/50 hover:text-route-orange"
+                            title="Iniciar"
+                          >
+                            <Play size={16} />
+                          </button>
                           <button
                             onClick={() =>
                               statusMutation.mutate({
@@ -412,9 +435,65 @@ export default function Freights() {
                           >
                             <XCircle size={16} />
                           </button>
-                        )}
-                      </div>
-                    )}
+                        </>
+                      )}
+                      {freight.status === "IN_PROGRESS" && (
+                        <>
+                          <button
+                            onClick={() =>
+                              statusMutation.mutate({
+                                id: freight.id,
+                                status: "DELIVERED",
+                              })
+                            }
+                            className="text-ink/50 hover:text-highway-green"
+                            title="Marcar como entregue"
+                          >
+                            <CheckCircle2 size={16} />
+                          </button>
+                          <button
+                            onClick={() =>
+                              statusMutation.mutate({
+                                id: freight.id,
+                                status: "CANCELED",
+                              })
+                            }
+                            className="text-ink/50 hover:text-alert-red"
+                            title="Cancelar"
+                          >
+                            <XCircle size={16} />
+                          </button>
+                        </>
+                      )}
+                      {freight.status === "DELIVERED" && (
+                        <button
+                          onClick={() =>
+                            statusMutation.mutate({
+                              id: freight.id,
+                              status: "CANCELED",
+                            })
+                          }
+                          className="text-ink/50 hover:text-alert-red"
+                          title="Cancelar"
+                        >
+                          <XCircle size={16} />
+                        </button>
+                      )}
+                      {freight.status === "CANCELED" && (
+                        <button
+                          onClick={() =>
+                            statusMutation.mutate({
+                              id: freight.id,
+                              status: "DELIVERED",
+                            })
+                          }
+                          className="text-ink/50 hover:text-highway-green"
+                          title="Desfazer cancelamento e Entregar"
+                        >
+                          <RotateCcw size={16} />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
