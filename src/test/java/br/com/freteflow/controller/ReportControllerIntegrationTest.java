@@ -337,4 +337,43 @@ class ReportControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.freightValue").value(1200.00))
                 .andExpect(jsonPath("$.storeNames.length()").value(3));
     }
+    @Test
+    void shouldExcludeCanceledFreightsFromVehicleProfitReport() throws Exception {
+        String token = createAdminAndGetToken("admin-report-canceled@test.com");
+
+        Driver driver = createDriver("39053344705", true);
+        Vehicle vehicle = createVehicle("CNC1L23", true);
+        Store store = createStore("Loja Cancelada Teste", new BigDecimal("1000.00"), true);
+
+        String freightPayload = """
+            {
+              "driverId": "%s",
+              "vehicleId": "%s",
+              "storeIds": ["%s"],
+              "freightDate": "2026-08-15T08:00:00"
+            }
+            """.formatted(driver.getId(), vehicle.getId(), store.getId());
+
+        String freightResponse = mockMvc.perform(post("/api/freights")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content(freightPayload))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        String freightId = com.jayway.jsonpath.JsonPath.read(freightResponse, "$.id");
+
+        mockMvc.perform(patch("/api/freights/{id}/status", freightId)
+                        .header("Authorization", "Bearer " + token)
+                        .param("status", "CANCELED"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/reports/vehicle/" + vehicle.getId() + "/profit")
+                        .header("Authorization", "Bearer " + token)
+                        .param("startDate", "2026-08-11")
+                        .param("endDate", "2026-08-25"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalFreightValue").value(0))
+                .andExpect(jsonPath("$.freights.length()").value(0));
+    }
 }

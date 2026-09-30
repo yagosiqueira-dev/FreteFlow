@@ -1,9 +1,11 @@
 package br.com.freteflow.controller;
 
 import br.com.freteflow.AbstractIntegrationTest;
+import br.com.freteflow.dto.auth.LoginDTO;
 import br.com.freteflow.entity.Driver;
 import br.com.freteflow.entity.Store;
 import br.com.freteflow.entity.Vehicle;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -14,9 +16,25 @@ import java.util.UUID;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import org.springframework.http.MediaType;
 
 class FreightControllerIntegrationTest extends AbstractIntegrationTest {
 
+    private ObjectMapper objectMapper;
+
+    private String createDriverAndGetToken(String email) throws Exception {
+        Driver driver = createDriver("12345678901", true);
+        LoginDTO loginDTO = new LoginDTO(email, "password123");
+        ObjectMapper mapper = new ObjectMapper();
+
+        String response = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(loginDTO)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        return com.jayway.jsonpath.JsonPath.read(response, "$.token");
+    }
     private static String generateValidCpf() {
         Random random = new Random();
         int[] base = new int[9];
@@ -263,7 +281,7 @@ class FreightControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldReturnConflict_whenTransitioningFromFinalState() throws Exception {
-        String token = createAdminAndGetToken("admin-freight-transition-3@test.com");
+        String token = createOperatorAndGetToken("operator-freight-transition-3@test.com");
         UUID freightId = createFreightAndGetId(token, "Loja Transition 3");
 
         mockMvc.perform(patch("/api/freights/{id}/status", freightId)
@@ -279,7 +297,7 @@ class FreightControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldReturnConflict_whenTransitioningDeliveredToInProgress() throws Exception {
-        String token = createAdminAndGetToken("admin-freight-transition-4@test.com");
+        String token = createOperatorAndGetToken("operator-freight-transition-4@test.com");
         UUID freightId = createFreightAndGetId(token, "Loja Transition 4");
 
         mockMvc.perform(patch("/api/freights/{id}/status", freightId)
@@ -422,5 +440,82 @@ class FreightControllerIntegrationTest extends AbstractIntegrationTest {
                         .contentType(APPLICATION_JSON)
                         .content(payload))
                 .andExpect(status().isConflict());
+    }
+    @Test
+    void shouldAllowUndoingCancellation() throws Exception {
+    String token = createAdminAndGetToken("admin-freight-undo-cancel@test.com");
+    UUID freightId = createFreightAndGetId(token, "Loja Undo Cancel");
+
+    mockMvc.perform(patch("/api/freights/{id}/status", freightId)
+            .header("Authorization", "Bearer " + token)
+            .param("status", "CANCELED"));
+
+    mockMvc.perform(patch("/api/freights/{id}/status", freightId)
+                    .header("Authorization", "Bearer " + token)
+                    .param("status", "DELIVERED"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("DELIVERED"));
+    }
+    @Test
+    void shouldAllowAdminToBypassTransitionRestrictions() throws Exception {
+        String token = createAdminAndGetToken("admin-freight-transition-3@test.com");
+        UUID freightId = createFreightAndGetId(token, "Loja Transition 3");
+
+        mockMvc.perform(patch("/api/freights/{id}/status", freightId)
+                        .header("Authorization", "Bearer " + token)
+                        .param("status", "IN_PROGRESS"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldFilterFreightsByDriverNameAndDate() throws Exception {
+        String token = createAdminAndGetToken("admin-freight-filter1@test.com");
+
+        Driver driver = createDriver(generateValidCpf(), true); // Cria com nome "Motorista de Teste"
+        Vehicle vehicle = createVehicle(uniquePlate(), true);
+        Store store = createStore("Loja Filtro 1", new BigDecimal("100.00"), true);
+
+        String freightDateStr = now();
+
+        String response = mockMvc.perform(post("/api/freights")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(APPLICATION_JSON)
+                        .content(freightRequestJson(driver.getId(), vehicle.getId(), store.getId(), freightDateStr)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        String freightId = com.jayway.jsonpath.JsonPath.read(response, "$.id");
+
+        String startDate = LocalDateTime.now().minusDays(1).withNano(0).toString();
+        String endDate = LocalDateTime.now().plusDays(1).withNano(0).toString();
+
+        mockMvc.perform(get("/api/freights")
+                        .header("Authorization", "Bearer " + token)
+                        .param("driverName", "Motorista de") // Nome parcial deve funcionar com o 'Contains'
+                        .param("startDate", startDate)
+                        .param("endDate", endDate))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[?(@.id == '%s')]", freightId).exists()); // Garante que o frete criado está na página
+    }
+
+    @Test
+    void shouldFilterFreightsByStatus() throws Exception {
+        String token = createAdminAndGetToken("admin-freight-filter2@test.com");
+
+        UUID freightId = createFreightAndGetId(token, "Loja Filtro Status");
+
+        mockMvc.perform(patch("/api/freights/{id}/status", freightId)
+                        .header("Authorization", "Bearer " + token)
+                        .param("status", "CANCELED"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/freights")
+                        .header("Authorization", "Bearer " + token)
+                        .param("status", "CANCELED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[?(@.id == '%s')]", freightId.toString()).exists())
+                .andExpect(jsonPath("$.content[0].status").value("CANCELED"));
     }
 }
