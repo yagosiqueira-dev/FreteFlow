@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.time.LocalDateTime;
+
 
 import java.net.URI;
 import java.util.UUID;
@@ -29,18 +31,22 @@ public class FreightController {
         return ResponseEntity.created(location).body(created);
     }
 
-    @GetMapping
-    public ResponseEntity<Page<FreightResponseDTO>> list(
-            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
-
-        Page<FreightResponseDTO> freights = freightService.listFreights(pageable);
-        return ResponseEntity.ok(freights);
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<FreightResponseDTO> findById(@PathVariable UUID id) {
         FreightResponseDTO freight = freightService.findById(id);
         return ResponseEntity.ok(freight);
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<FreightResponseDTO>> list(
+            @RequestParam(required = false) FreightStatus status,
+            @RequestParam(required = false) String driverName,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
+
+        Page<FreightResponseDTO> freights = freightService.listFreights(status, driverName, startDate, endDate, pageable);
+        return ResponseEntity.ok(freights);
     }
 
     @PutMapping("/{id}")

@@ -9,11 +9,11 @@ public enum FreightStatus {
     CANCELED;
 
     public boolean canTransitionTo(FreightStatus newStatus) {
-        return switch (this) {
-            case PENDING -> newStatus == IN_PROGRESS || newStatus == CANCELED;
-            case IN_PROGRESS -> newStatus == DELIVERED || newStatus == CANCELED;
-            case DELIVERED -> newStatus == CANCELED;
-            case CANCELED -> false;
-        };
-    }
+    return switch (this) {
+        case PENDING -> newStatus == IN_PROGRESS || newStatus == CANCELED;
+        case IN_PROGRESS -> newStatus == DELIVERED || newStatus == CANCELED;
+        case DELIVERED -> newStatus == CANCELED;
+        case CANCELED -> newStatus == DELIVERED;
+    };
+}
 }

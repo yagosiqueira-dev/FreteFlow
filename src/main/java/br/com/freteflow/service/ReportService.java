@@ -6,6 +6,8 @@ import br.com.freteflow.dto.report.FreightReportItemDTO;
 import br.com.freteflow.dto.report.FreightSummaryDTO;
 import br.com.freteflow.dto.report.VehicleProfitReportDTO;
 import br.com.freteflow.entity.Driver;
+import br.com.freteflow.entity.Freight;
+import br.com.freteflow.entity.FreightStatus;
 import br.com.freteflow.entity.Store;
 import br.com.freteflow.entity.Vehicle;
 import br.com.freteflow.exception.DriverNotFoundException;
@@ -42,7 +44,11 @@ public class ReportService {
         LocalDateTime startDateTime = startDate.atStartOfDay();
         LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
 
-        var freights = freightRepository.findByDriverIdAndFreightDateBetweenOrderByFreightDateAsc(driverId, startDateTime, endDateTime);
+        List<Freight> freights = freightRepository
+                .findByDriverIdAndFreightDateBetweenOrderByFreightDateAsc(driverId, startDateTime, endDateTime)
+                .stream()
+                .filter(f -> f.getStatus() == FreightStatus.DELIVERED)
+                .toList();
 
         List<FreightReportItemDTO> items = freights.stream()
                 .map(f -> {
@@ -76,8 +82,11 @@ public class ReportService {
         LocalDateTime startDateTime = startDate.atStartOfDay();
         LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
 
-        var freights = freightRepository.findByVehicleIdAndFreightDateBetweenOrderByFreightDateAsc(
-                vehicleId, startDateTime, endDateTime);
+        List<Freight> freights = freightRepository
+                .findByVehicleIdAndFreightDateBetweenOrderByFreightDateAsc(vehicleId, startDateTime, endDateTime)
+                .stream()
+                .filter(f -> f.getStatus() == FreightStatus.DELIVERED)
+                .toList();
 
         var expenses = expenseRepository.findByVehicleIdAndExpenseDateBetweenOrderByExpenseDateAsc(
                 vehicleId, startDate, endDate);

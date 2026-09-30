@@ -20,6 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 import br.com.freteflow.entity.User;
 import br.com.freteflow.entity.UserRole;
 import org.springframework.security.core.context.SecurityContextHolder;
+import br.com.freteflow.repository.specification.FreightSpecification;
+import org.springframework.data.jpa.domain.Specification;
+import java.time.LocalDateTime;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -155,5 +158,18 @@ public class FreightService {
             .getPrincipal();
 
         return currentUser.getRole() == UserRole.ADMIN;
+    }
+    @Transactional(readOnly = true)
+    public Page<FreightResponseDTO> listFreights(
+            FreightStatus status, String driverName, LocalDateTime startDate, LocalDateTime endDate,
+            Pageable pageable) {
+
+        Specification<Freight> spec = Specification
+                .where(FreightSpecification.statusEquals(status))
+                .and(FreightSpecification.driverNameContains(driverName))
+                .and(FreightSpecification.freightDateBetween(startDate, endDate));
+
+        return freightRepository.findAll(spec, pageable)
+                .map(FreightResponseDTO::fromEntity);
     }
 }
