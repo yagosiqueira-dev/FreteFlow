@@ -2,6 +2,7 @@ import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import { useAuth } from "../../hooks/useAuth";
+import { AxiosError } from "axios";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -21,7 +22,15 @@ export default function Login() {
       login(response.data.token);
       navigate("/dashboard");
     } catch (err) {
-      setError("Email ou senha inválidos");
+      const axiosErr = err as AxiosError<{ message?: string }>;
+      if (axiosErr.response?.status === 429) {
+        setError(
+          axiosErr.response.data?.message ??
+            "Muitas tentativas. Tente novamente mais tarde.",
+        );
+      } else {
+        setError("Email ou senha inválidos");
+      }
     } finally {
       setLoading(false);
     }
@@ -52,9 +61,7 @@ export default function Login() {
           required
         />
 
-        {error && (
-          <p className="text-alert-red text-sm mb-4">{error}</p>
-        )}
+        {error && <p className="text-alert-red text-sm mb-4">{error}</p>}
 
         <button
           type="submit"
