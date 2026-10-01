@@ -159,17 +159,16 @@ public class FreightService {
 
         return currentUser.getRole() == UserRole.ADMIN;
     }
-    @Transactional(readOnly = true)
     public Page<FreightResponseDTO> listFreights(
-            FreightStatus status, String driverName, LocalDateTime startDate, LocalDateTime endDate,
+            FreightStatus status, String driverName, UUID vehicleId, LocalDateTime startDate, LocalDateTime endDate,
             Pageable pageable) {
 
         Specification<Freight> spec = Specification
                 .where(FreightSpecification.statusEquals(status))
                 .and(FreightSpecification.driverNameContains(driverName))
+                .and(FreightSpecification.vehicleIdEquals(vehicleId)) // <-- Linha adicionada
                 .and(FreightSpecification.freightDateBetween(startDate, endDate));
 
-        return freightRepository.findAll(spec, pageable)
-                .map(FreightResponseDTO::fromEntity);
+        return freightRepository.findAll(spec, pageable).map(FreightResponseDTO::fromEntity);
     }
 }

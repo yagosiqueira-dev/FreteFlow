@@ -5,6 +5,7 @@ import br.com.freteflow.entity.FreightStatus;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class FreightSpecification {
 
@@ -27,5 +28,8 @@ public class FreightSpecification {
             if (start != null) return cb.greaterThanOrEqualTo(root.get("freightDate"), start);
             return cb.lessThanOrEqualTo(root.get("freightDate"), end);
         };
+    }
+    public static Specification<Freight> vehicleIdEquals(UUID vehicleId) {
+        return (root, query, cb) -> vehicleId == null ? null : cb.equal(root.get("vehicle").get("id"), vehicleId);
     }
 }

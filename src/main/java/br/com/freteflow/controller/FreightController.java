@@ -41,11 +41,12 @@ public class FreightController {
     public ResponseEntity<Page<FreightResponseDTO>> list(
             @RequestParam(required = false) FreightStatus status,
             @RequestParam(required = false) String driverName,
+            @RequestParam(required = false) UUID vehicleId,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
             @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
 
-        Page<FreightResponseDTO> freights = freightService.listFreights(status, driverName, startDate, endDate, pageable);
+        Page<FreightResponseDTO> freights = freightService.listFreights(status, driverName, vehicleId, startDate, endDate, pageable);
         return ResponseEntity.ok(freights);
     }
 
