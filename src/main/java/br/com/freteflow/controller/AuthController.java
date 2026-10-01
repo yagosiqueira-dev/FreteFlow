@@ -4,17 +4,20 @@ import br.com.freteflow.dto.auth.LoginDTO;
 import br.com.freteflow.dto.auth.LoginResponseDTO;
 import br.com.freteflow.dto.auth.RegisterDTO;
 import br.com.freteflow.entity.User;
+import br.com.freteflow.entity.UserRole;
+import br.com.freteflow.exception.TooManyLoginAttemptsException;
+import br.com.freteflow.security.LoginAttemptService;
 import br.com.freteflow.security.TokenService;
 import br.com.freteflow.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import br.com.freteflow.entity.UserRole;
 
 @RestController
 @RequestMapping("/auth")
@@ -24,19 +27,28 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
     private final TokenService tokenService;
+    private final LoginAttemptService loginAttemptService;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@RequestBody LoginDTO data) {
 
-        var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
+        if (loginAttemptService.isBlocked(data.email())) {
+            throw new TooManyLoginAttemptsException();
+        }
 
+        try {
+            var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
+            var auth = this.authenticationManager.authenticate(usernamePassword);
 
-        var auth = this.authenticationManager.authenticate(usernamePassword);
+            loginAttemptService.loginSucceeded(data.email());
 
+            var token = tokenService.generateToken((User) auth.getPrincipal());
+            return ResponseEntity.ok(new LoginResponseDTO(token));
 
-        var token = tokenService.generateToken((User) auth.getPrincipal());
-
-        return ResponseEntity.ok(new LoginResponseDTO(token));
+        } catch (BadCredentialsException ex) {
+            loginAttemptService.loginFailed(data.email());
+            throw ex;
+        }
     }
 
     @PostMapping("/register")
