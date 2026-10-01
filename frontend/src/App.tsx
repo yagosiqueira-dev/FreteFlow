@@ -9,8 +9,8 @@ import Stores from "./pages/Stores/Stores";
 import Freights from "./pages/Freights/Freights";
 import Reports from "./pages/Reports/Reports";
 import Users from "./pages/Users/Users";
+import Expenses from "./pages/Expenses/Expenses"; 
 import { AdminRoute } from "./components/AdminRoute";
-
 
 function App() {
   return (
@@ -30,6 +30,7 @@ function App() {
         <Route path="/motoristas" element={<Drivers />} />
         <Route path="/lojas" element={<Stores />} />
         <Route path="/fretes" element={<Freights />} />
+        <Route path="/despesas" element={<Expenses />} /> {/* Nova Rota de Despesas */}
         <Route path="/relatorios" element={<Reports />} />
         <Route path="/usuarios" element={<AdminRoute><Users /></AdminRoute>} />
       </Route>
