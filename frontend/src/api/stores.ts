@@ -31,3 +31,8 @@ export async function activateStore(id: string): Promise<Store> {
   const response = await api.patch<Store>(`/api/stores/${id}/activate`);
   return response.data;
 }
+
+export async function updateStore(id: string, data: StoreRequest): Promise<Store> {
+  const response = await api.put<Store>(`/api/stores/${id}`, data);
+  return response.data;
+}

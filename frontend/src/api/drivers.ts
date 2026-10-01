@@ -2,13 +2,20 @@ import api from "./axios";
 import type { Driver, DriverRequest } from "../types/driver";
 import type { PagedResponse } from "../types/vehicle";
 
-export async function listDrivers(): Promise<PagedResponse<Driver>> {
-  const response = await api.get<PagedResponse<Driver>>("/api/drivers");
+export async function listDrivers(page: number = 0): Promise<PagedResponse<Driver>> {
+  const response = await api.get<PagedResponse<Driver>>("/api/drivers", {
+    params: { page, size: 20 },
+  });
   return response.data;
 }
 
 export async function createDriver(data: DriverRequest): Promise<Driver> {
   const response = await api.post<Driver>("/api/drivers", data);
+  return response.data;
+}
+
+export async function updateDriver(id: string, data: DriverRequest): Promise<Driver> {
+  const response = await api.put<Driver>(`/api/drivers/${id}`, data);
   return response.data;
 }
 
