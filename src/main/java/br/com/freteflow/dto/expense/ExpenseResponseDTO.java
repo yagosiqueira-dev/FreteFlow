@@ -13,6 +13,7 @@ public record ExpenseResponseDTO(
         String description,
         BigDecimal amount,
         LocalDate expenseDate,
+        boolean enabled,
         LocalDateTime createdAt
 ) {
     public static ExpenseResponseDTO fromEntity(Expense expense) {
@@ -22,6 +23,7 @@ public record ExpenseResponseDTO(
                 expense.getDescription(),
                 expense.getAmount(),
                 expense.getExpenseDate(),
+                expense.isEnabled(),
                 expense.getCreatedAt()
         );
     }

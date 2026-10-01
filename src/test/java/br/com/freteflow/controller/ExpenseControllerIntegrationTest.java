@@ -4,6 +4,7 @@ import br.com.freteflow.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 class ExpenseControllerIntegrationTest extends AbstractIntegrationTest {
@@ -103,5 +104,103 @@ class ExpenseControllerIntegrationTest extends AbstractIntegrationTest {
                         .contentType("application/json")
                         .content(expensePayload))
                 .andExpect(status().isNotFound());
+    }
+    @Test
+    void shouldUpdateExpenseSuccessfully() throws Exception {
+        String adminToken = createAdminAndGetToken("admin-expense-update@freteflow.com");
+        String operatorToken = createOperatorAndGetToken("operator-expense-update@freteflow.com");
+
+        String vehiclePayload = """
+                {
+                  "licensePlate": "UPD1D23",
+                  "type": "Caminhão",
+                  "model": "Scania",
+                  "year": 2022
+                }
+                """;
+
+        String vehicleResponse = mockMvc.perform(post("/api/vehicles")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType("application/json")
+                        .content(vehiclePayload))
+                .andReturn().getResponse().getContentAsString();
+
+        String vehicleId = vehicleResponse.split("\"id\":\"")[1].split("\"")[0];
+
+        String expensePayload = """
+                { "vehicleId": "%s", "description": "Pedágio", "amount": 50.00, "expenseDate": "2026-10-01" }
+                """.formatted(vehicleId);
+
+        String expenseResponse = mockMvc.perform(post("/api/expenses")
+                        .header("Authorization", "Bearer " + operatorToken)
+                        .contentType("application/json")
+                        .content(expensePayload))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        String expenseId = expenseResponse.split("\"id\":\"")[1].split("\"")[0];
+
+        String updatePayload = """
+                { "vehicleId": "%s", "description": "Manutenção", "amount": 750.00, "expenseDate": "2026-10-02" }
+                """.formatted(vehicleId);
+
+        mockMvc.perform(put("/api/expenses/" + expenseId)
+                        .header("Authorization", "Bearer " + operatorToken)
+                        .contentType("application/json")
+                        .content(updatePayload))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.description").value("Manutenção"))
+                .andExpect(jsonPath("$.amount").value(750.00));
+    }
+
+    @Test
+    void shouldListExpensesPaginated() throws Exception {
+        String operatorToken = createOperatorAndGetToken("operator-expense-list@freteflow.com");
+
+        mockMvc.perform(get("/api/expenses")
+                        .header("Authorization", "Bearer " + operatorToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.pageable").exists());
+    }
+    @Test
+    void shouldDeactivateExpenseSuccessfully() throws Exception {
+        String adminToken = createAdminAndGetToken("admin-expense-delete@freteflow.com");
+        String operatorToken = createOperatorAndGetToken("operator-expense-delete@freteflow.com");
+
+        String vehiclePayload = """
+                {
+                  "licensePlate": "DEL1D23",
+                  "type": "Caminhão",
+                  "model": "Volvo",
+                  "year": 2021
+                }
+                """;
+
+        String vehicleResponse = mockMvc.perform(post("/api/vehicles")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType("application/json")
+                        .content(vehiclePayload))
+                .andReturn().getResponse().getContentAsString();
+
+        String vehicleId = vehicleResponse.split("\"id\":\"")[1].split("\"")[0];
+
+        String expensePayload = """
+                { "vehicleId": "%s", "description": "Manutenção", "amount": 100.00, "expenseDate": "2026-10-01" }
+                """.formatted(vehicleId);
+
+        String expenseResponse = mockMvc.perform(post("/api/expenses")
+                        .header("Authorization", "Bearer " + operatorToken)
+                        .contentType("application/json")
+                        .content(expensePayload))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        String expenseId = expenseResponse.split("\"id\":\"")[1].split("\"")[0];
+
+        mockMvc.perform(delete("/api/expenses/" + expenseId)
+                        .header("Authorization", "Bearer " + operatorToken))
+                .andExpect(status().isNoContent());
     }
 }

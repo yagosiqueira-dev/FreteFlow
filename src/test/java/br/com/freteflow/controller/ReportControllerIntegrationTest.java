@@ -376,4 +376,74 @@ class ReportControllerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.totalFreightValue").value(0))
                 .andExpect(jsonPath("$.freights.length()").value(0));
     }
+    @Test
+    void shouldExcludeCanceledExpensesFromVehicleProfitReport() throws Exception {
+        String token = createAdminAndGetToken("admin-expense-canceled@freteflow.com");
+
+        Driver driver = createDriver("12345678901", true);
+        Vehicle vehicle = createVehicle("CXP1L23", true);
+        Store store = createStore("Loja Despesa Cancelada", new BigDecimal("1000.00"), true);
+
+        String freightPayload = """
+            {
+              "driverId": "%s",
+              "vehicleId": "%s",
+              "storeIds": ["%s"],
+              "freightDate": "2026-08-15T08:00:00"
+            }
+            """.formatted(driver.getId(), vehicle.getId(), store.getId());
+
+        mockMvc.perform(post("/api/freights")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content(freightPayload))
+                .andExpect(status().isCreated());
+
+        String activeExpensePayload = """
+            {
+              "vehicleId": "%s",
+              "description": "Pedágio",
+              "amount": 200.00,
+              "expenseDate": "2026-08-16"
+            }
+            """.formatted(vehicle.getId());
+
+        mockMvc.perform(post("/api/expenses")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content(activeExpensePayload))
+                .andExpect(status().isCreated());
+
+        String canceledExpensePayload = """
+            {
+              "vehicleId": "%s",
+              "description": "Manutenção",
+              "amount": 300.00,
+              "expenseDate": "2026-08-16"
+            }
+            """.formatted(vehicle.getId());
+
+        String expenseResponse = mockMvc.perform(post("/api/expenses")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType("application/json")
+                        .content(canceledExpensePayload))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        String expenseId = com.jayway.jsonpath.JsonPath.read(expenseResponse, "$.id");
+
+        mockMvc.perform(delete("/api/expenses/" + expenseId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/reports/vehicle/" + vehicle.getId() + "/profit")
+                        .header("Authorization", "Bearer " + token)
+                        .param("startDate", "2026-08-11")
+                        .param("endDate", "2026-08-25"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalFreightValue").value(1000.00))
+                .andExpect(jsonPath("$.totalExpenses").value(200.00)) // A despesa de 300 foi ignorada
+                .andExpect(jsonPath("$.netProfit").value(800.00)) // 1000 - 200 = 800
+                .andExpect(jsonPath("$.expenses.length()").value(1));
+    }
 }

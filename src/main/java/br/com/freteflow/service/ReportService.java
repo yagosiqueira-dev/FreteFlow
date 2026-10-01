@@ -107,6 +107,7 @@ public class ReportService {
                 .toList();
 
         List<ExpenseSummaryDTO> expenseItems = expenses.stream()
+                .filter(e -> e.isEnabled())
                 .map(e -> new ExpenseSummaryDTO(
                         e.getExpenseDate(),
                         e.getDescription(),

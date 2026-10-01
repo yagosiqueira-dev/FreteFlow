@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
+public interface ExpenseRepository extends JpaRepository<Expense, UUID>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<Expense> {
     List<Expense> findByVehicleId(UUID vehicleId);
     List<Expense> findByVehicleIdAndExpenseDateBetweenOrderByExpenseDateAsc(
             UUID vehicleId, LocalDate start, LocalDate end);
