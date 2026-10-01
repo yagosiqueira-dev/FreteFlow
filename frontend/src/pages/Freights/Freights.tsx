@@ -8,19 +8,21 @@ import {
   CheckCircle2,
   XCircle,
   RotateCcw,
-  Search
+  Search,
+  Pencil
 } from "lucide-react";
 import { AxiosError } from "axios";
 import {
   listFreights,
   createFreight,
   updateFreightStatus,
+  updateFreight
 } from "../../api/freights";
 import type { FreightFilters } from "../../api/freights";
 import { listDrivers } from "../../api/drivers";
 import { listVehicles } from "../../api/vehicles";
 import { listStores } from "../../api/stores";
-import type { FreightRequest, FreightStatus } from "../../types/freight";
+import type { FreightRequest, FreightStatus, Freight } from "../../types/freight";
 
 function formatCurrency(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -49,6 +51,7 @@ const statusColors: Record<FreightStatus, string> = {
 
 export default function Freights() {
   const [showForm, setShowForm] = useState(false);
+  const [editingFreight, setEditingFreight] = useState<Freight | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [selectedStores, setSelectedStores] = useState<string[]>([]);
@@ -62,36 +65,42 @@ export default function Freights() {
     queryFn: () => listFreights(page, filters),
   });
 
+  // Removi o "enabled: showForm" para que os dados estejam disponíveis para os filtros de busca
   const { data: driversData } = useQuery({
     queryKey: ["drivers-dropdown"],
-    queryFn: listDrivers,
-    enabled: showForm,
+    queryFn: () => listDrivers(0),
   });
 
   const { data: vehiclesData } = useQuery({
     queryKey: ["vehicles-dropdown"],
-    queryFn: listVehicles,
-    enabled: showForm,
+    queryFn: () => listVehicles(0), 
   });
 
   const { data: storesData } = useQuery({
     queryKey: ["stores-dropdown"],
     queryFn: () => listStores(0, {}, 100),
-    enabled: showForm,
   });
 
   const createMutation = useMutation({
     mutationFn: createFreight,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["freights"] });
-      setShowForm(false);
-      setFormError(null);
-      setSelectedStores([]);
+      closeForm();
     },
     onError: () => {
-      setFormError(
-        "Não foi possível salvar o frete. Verifique os dados informados.",
-      );
+      setFormError("Não foi possível salvar o frete. Verifique os dados informados.");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: FreightRequest }) =>
+      updateFreight(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["freights"] });
+      closeForm();
+    },
+    onError: () => {
+      setFormError("Não foi possível salvar as alterações.");
     },
   });
 
@@ -104,9 +113,7 @@ export default function Freights() {
     },
     onError: (err: AxiosError) => {
       if (err.response?.status === 403) {
-        setActionError(
-          "Você não tem permissão para alterar o status deste frete.",
-        );
+        setActionError("Você não tem permissão para alterar o status deste frete.");
       } else {
         setActionError("Não foi possível alterar o status do frete.");
       }
@@ -135,6 +142,13 @@ export default function Freights() {
     );
   }
 
+  function closeForm() {
+    setShowForm(false);
+    setEditingFreight(null);
+    setFormError(null);
+    setSelectedStores([]);
+  }
+
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setFormError(null);
@@ -151,10 +165,14 @@ export default function Freights() {
       driverId: formData.get("driverId") as string,
       vehicleId: formData.get("vehicleId") as string,
       storeIds: selectedStores,
-      freightDate: `${freightDate}:00`,
+      freightDate: freightDate.length === 16 ? `${freightDate}:00` : freightDate,
     };
 
-    createMutation.mutate(payload);
+    if (editingFreight) {
+      updateMutation.mutate({ id: editingFreight.id, data: payload });
+    } else {
+      createMutation.mutate(payload);
+    }
   }
 
   function handleFilterSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -162,12 +180,14 @@ export default function Freights() {
     const formData = new FormData(e.currentTarget);
 
     const driverName = formData.get("filterDriverName") as string;
+    const vehicleId = formData.get("filterVehicleId") as string;
     const status = formData.get("filterStatus") as string;
     const startDate = formData.get("filterStartDate") as string;
     const endDate = formData.get("filterEndDate") as string;
 
     setFilters({
       driverName: driverName || undefined,
+      vehicleId: vehicleId || undefined,
       status: status === "" ? undefined : (status as FreightStatus),
       startDate: startDate || undefined,
       endDate: endDate || undefined,
@@ -189,7 +209,9 @@ export default function Freights() {
         <button
           onClick={() => {
             setShowForm(!showForm);
+            setEditingFreight(null);
             setFormError(null);
+            setSelectedStores([]);
           }}
           className="flex items-center gap-2 px-4 py-2 bg-route-orange text-white rounded font-medium text-sm"
         >
@@ -200,41 +222,42 @@ export default function Freights() {
 
       <form
         onSubmit={handleFilterSubmit}
-        className="bg-white p-4 rounded mb-6 grid grid-cols-6 gap-3 items-end border border-ink/10"
+        className="bg-white p-4 rounded mb-6 grid grid-cols-5 gap-3 items-end border border-ink/10"
       >
-        <div className="col-span-2">
+        <div>
           <label className="block text-xs text-ink/60 mb-1">Motorista</label>
-          <input 
+          <select 
             name="filterDriverName" 
-            placeholder="Buscar por nome" 
-            className="w-full border border-ink/20 px-3 py-1.5 rounded text-sm" 
-          />
+            defaultValue=""
+            className="w-full border border-ink/20 px-3 py-1.5 rounded text-sm bg-white"
+          >
+            <option value="">Todos</option>
+            {driversData?.content.map((d) => (
+              <option key={d.id} value={d.name}>{d.name}</option>
+            ))}
+          </select>
         </div>
 
-        <div className="col-span-2">
-          <label className="block text-xs text-ink/60 mb-1">Data Inicial</label>
-          <input 
-            name="filterStartDate" 
-            type="datetime-local" 
-            className="w-full border border-ink/20 px-3 py-1.5 rounded text-sm" 
-          />
+        <div>
+          <label className="block text-xs text-ink/60 mb-1">Veículo</label>
+          <select 
+            name="filterVehicleId" 
+            defaultValue=""
+            className="w-full border border-ink/20 px-3 py-1.5 rounded text-sm bg-white"
+          >
+            <option value="">Todos</option>
+            {vehiclesData?.content.map((v) => (
+              <option key={v.id} value={v.id}>{v.licensePlate} - {v.model}</option>
+            ))}
+          </select>
         </div>
 
-        <div className="col-span-2">
-          <label className="block text-xs text-ink/60 mb-1">Data Final</label>
-          <input 
-            name="filterEndDate" 
-            type="datetime-local" 
-            className="w-full border border-ink/20 px-3 py-1.5 rounded text-sm" 
-          />
-        </div>
-
-        <div className="col-span-2">
+        <div>
           <label className="block text-xs text-ink/60 mb-1">Status</label>
           <select 
             name="filterStatus" 
             defaultValue="" 
-            className="w-full border border-ink/20 px-3 py-1.5 rounded text-sm"
+            className="w-full border border-ink/20 px-3 py-1.5 rounded text-sm bg-white"
           >
             <option value="">Todos</option>
             {Object.entries(statusLabels).map(([val, label]) => (
@@ -243,7 +266,25 @@ export default function Freights() {
           </select>
         </div>
 
-        <div className="col-span-6 flex gap-2 justify-end">
+        <div>
+          <label className="block text-xs text-ink/60 mb-1">Data Inicial</label>
+          <input 
+            name="filterStartDate" 
+            type="datetime-local" 
+            className="w-full border border-ink/20 px-3 py-1.5 rounded text-sm" 
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs text-ink/60 mb-1">Data Final</label>
+          <input 
+            name="filterEndDate" 
+            type="datetime-local" 
+            className="w-full border border-ink/20 px-3 py-1.5 rounded text-sm" 
+          />
+        </div>
+
+        <div className="col-span-5 flex gap-2 justify-end mt-2">
           <button
             onClick={handleClearFilters}
             type="button"
@@ -267,17 +308,24 @@ export default function Freights() {
         </div>
       )}
 
-      {showForm && (
+      {(showForm || editingFreight) && (
         <form
           onSubmit={handleSubmit}
           className="bg-white p-6 rounded mb-6 grid grid-cols-2 gap-4 max-w-2xl"
         >
+          <div className="col-span-2 mb-2">
+            <h2 className="text-lg font-medium text-ink">
+              {editingFreight ? "Editar Frete" : "Cadastrar Novo Frete"}
+            </h2>
+            {editingFreight && <p className="text-sm text-ink/60">Editando a rota: {editingFreight.origin} → {editingFreight.destinations}</p>}
+          </div>
+
           <div>
             <label className="block text-xs text-ink/60 mb-1">Motorista</label>
             <select
               name="driverId"
               required
-              className="w-full border border-ink/20 px-3 py-2 rounded text-sm"
+              className="w-full border border-ink/20 px-3 py-2 rounded text-sm bg-white"
             >
               <option value="">Selecione</option>
               {driversData?.content
@@ -295,7 +343,7 @@ export default function Freights() {
             <select
               name="vehicleId"
               required
-              className="w-full border border-ink/20 px-3 py-2 rounded text-sm"
+              className="w-full border border-ink/20 px-3 py-2 rounded text-sm bg-white"
             >
               <option value="">Selecione</option>
               {vehiclesData?.content
@@ -309,9 +357,7 @@ export default function Freights() {
           </div>
 
           <div className="col-span-2">
-            <label className="block text-xs text-ink/60 mb-1">
-              Data do frete
-            </label>
+            <label className="block text-xs text-ink/60 mb-1">Data do frete</label>
             <input
               name="freightDate"
               type="datetime-local"
@@ -322,7 +368,7 @@ export default function Freights() {
 
           <div className="col-span-2">
             <label className="block text-xs text-ink/60 mb-1">
-              Lojas (rotas) — todas devem ter a mesma origem
+              Lojas (rotas) — todas devem ter a mesma origem {editingFreight && <span className="text-route-orange font-bold">(Selecione as lojas novamente)</span>}
             </label>
             <div className="border border-ink/20 rounded max-h-48 overflow-y-auto p-2">
               {Object.entries(groupedStores)
@@ -359,13 +405,22 @@ export default function Freights() {
             <p className="col-span-2 text-alert-red text-sm">{formError}</p>
           )}
 
-          <button
-            type="submit"
-            disabled={createMutation.isPending}
-            className="col-span-2 py-2 bg-highway-green text-white rounded font-medium disabled:opacity-50"
-          >
-            {createMutation.isPending ? "Salvando..." : "Salvar"}
-          </button>
+          <div className="col-span-2 flex gap-2 mt-4">
+            <button
+              type="button"
+              onClick={closeForm}
+              className="flex-1 py-2 border border-ink/20 rounded font-medium text-ink/70 hover:bg-ink/5"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={createMutation.isPending || updateMutation.isPending}
+              className="flex-1 py-2 bg-highway-green text-white rounded font-medium disabled:opacity-50"
+            >
+              {createMutation.isPending || updateMutation.isPending ? "Salvando..." : "Salvar"}
+            </button>
+          </div>
         </form>
       )}
 
@@ -409,6 +464,19 @@ export default function Freights() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
+                      {/* Botão Lápis adicionado */}
+                      <button
+                        onClick={() => {
+                          setEditingFreight(freight);
+                          setShowForm(false);
+                          setSelectedStores([]); // Reseta as lojas para forçar re-seleção correta na edição
+                        }}
+                        className="text-ink/50 hover:text-asphalt"
+                        title="Editar"
+                      >
+                        <Pencil size={16} />
+                      </button>
+
                       {freight.status === "PENDING" && (
                         <>
                           <button

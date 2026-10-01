@@ -5,8 +5,10 @@ import type { PagedResponse } from "../types/vehicle";
 export interface FreightFilters {
   status?: FreightStatus | "";
   driverName?: string;
+  vehicleId?: string; 
   startDate?: string;
   endDate?: string;
+  size?: number;
 }
 
 export async function listFreights(
@@ -49,5 +51,10 @@ export async function updateFreightStatus(id: string, status: FreightStatus): Pr
   const response = await api.patch<Freight>(`/api/freights/${id}/status`, null, {
     params: { status },
   });
+  return response.data;
+}
+
+export async function updateFreight(id: string, data: FreightRequest): Promise<Freight> {
+  const response = await api.put<Freight>(`/api/freights/${id}`, data);
   return response.data;
 }
