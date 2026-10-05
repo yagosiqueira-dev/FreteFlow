@@ -51,7 +51,7 @@ function DriverReportTab() {
 
   const { data: driversData } = useQuery({
     queryKey: ["drivers"],
-    queryFn: listDrivers,
+    queryFn: () => listDrivers(0),
   });
   const activeDrivers = driversData?.content.filter((d) => d.enabled) ?? [];
 
@@ -128,7 +128,7 @@ function VehicleReportTab() {
 
   const { data: vehiclesData } = useQuery({
     queryKey: ["vehicles"],
-    queryFn: listVehicles,
+    queryFn: () => listVehicles(0),
   });
   const activeVehicles = vehiclesData?.content.filter((v) => v.enabled) ?? [];
 
