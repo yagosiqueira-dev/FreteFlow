@@ -8,9 +8,14 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      // The manifest is served from public; keep SW generation/registration off in this stage.
-      disable: true,
+      // Keep using the manually maintained manifest in public/.
       manifest: false,
+      strategies: 'generateSW',
+      injectRegister: 'inline',
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2,webmanifest}'],
+        navigateFallback: null,
+      },
     }),
   ],
   resolve: {
