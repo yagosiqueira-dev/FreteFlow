@@ -84,6 +84,52 @@ class FreightControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void operatorCanPerformAllOperationalFreightOperations() throws Exception {
+        String token = createOperatorAndGetToken("operator-freight-access@test.com");
+        Driver driver = createDriver(generateValidCpf(), true);
+        Vehicle vehicle = createVehicle(uniquePlate(), true);
+        Store store = createStore("Loja Operator Access", new BigDecimal("300.00"), true);
+
+        String response = mockMvc.perform(post("/api/freights")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(APPLICATION_JSON)
+                        .content(freightRequestJson(driver.getId(), vehicle.getId(), store.getId(), now())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("DELIVERED"))
+                .andReturn().getResponse().getContentAsString();
+        UUID freightId = UUID.fromString(com.jayway.jsonpath.JsonPath.read(response, "$.id"));
+
+        mockMvc.perform(get("/api/freights/{id}", freightId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/freights")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+        mockMvc.perform(put("/api/freights/{id}", freightId)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(APPLICATION_JSON)
+                        .content(freightRequestJson(driver.getId(), vehicle.getId(), store.getId(), now())))
+                .andExpect(status().isOk());
+        mockMvc.perform(patch("/api/freights/{id}/status", freightId)
+                        .header("Authorization", "Bearer " + token)
+                        .param("status", "CANCELED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELED"));
+    }
+
+    @Test
+    void unauthenticatedUserIsRejectedFromAllFreightOperations() throws Exception {
+        UUID id = UUID.randomUUID();
+        mockMvc.perform(post("/api/freights").contentType(APPLICATION_JSON).content("{}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/freights/{id}", id)).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/freights")).andExpect(status().isForbidden());
+        mockMvc.perform(put("/api/freights/{id}", id).contentType(APPLICATION_JSON).content("{}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(patch("/api/freights/{id}/status", id).param("status", "CANCELED"))
+                .andExpect(status().isForbidden());
+    }
+    @Test
     void shouldCreateFreightSuccessfully_whenAdmin() throws Exception {
         String token = createAdminAndGetToken("admin-freight-1@test.com");
         Driver driver = createDriver(generateValidCpf(), true);

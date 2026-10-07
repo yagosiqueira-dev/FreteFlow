@@ -24,4 +24,4 @@ server:
 api:
   security:
     token:
-      secret: ${JWT_SECRET:meu_secret_padrao_apenas_para_dev_12345}
+      secret: ${JWT_SECRET}

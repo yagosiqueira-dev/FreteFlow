@@ -18,6 +18,13 @@ public class TokenService {
     @Value("${api.security.token.secret}")
     private String secret;
 
+    public TokenService(@Value("${api.security.token.secret}") String secret) {
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("JWT_SECRET must be configured and non-empty");
+        }
+        this.secret = secret;
+    }
+
     private static final String ISSUER = "freteflow-api";
 
     public String generateToken(User user) {

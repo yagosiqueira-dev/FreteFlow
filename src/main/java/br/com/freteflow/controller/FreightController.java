@@ -6,6 +6,7 @@ import br.com.freteflow.entity.FreightStatus;
 import br.com.freteflow.service.FreightService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -24,6 +25,7 @@ public class FreightController {
 
     private final FreightService freightService;
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR')")
     @PostMapping
     public ResponseEntity<FreightResponseDTO> create(@Valid @RequestBody FreightRequestDTO request) {
         FreightResponseDTO created = freightService.createFreight(request);
@@ -31,12 +33,14 @@ public class FreightController {
         return ResponseEntity.created(location).body(created);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR')")
     @GetMapping("/{id}")
     public ResponseEntity<FreightResponseDTO> findById(@PathVariable UUID id) {
         FreightResponseDTO freight = freightService.findById(id);
         return ResponseEntity.ok(freight);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR')")
     @GetMapping
     public ResponseEntity<Page<FreightResponseDTO>> list(
             @RequestParam(required = false) FreightStatus status,
@@ -50,6 +54,7 @@ public class FreightController {
         return ResponseEntity.ok(freights);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR')")
     @PutMapping("/{id}")
     public ResponseEntity<FreightResponseDTO> update(
             @PathVariable UUID id, @Valid @RequestBody FreightRequestDTO request) {
@@ -58,6 +63,7 @@ public class FreightController {
         return ResponseEntity.ok(updated);
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR')")
     @PatchMapping("/{id}/status")
     public ResponseEntity<FreightResponseDTO> updateStatus(
             @PathVariable UUID id, @RequestParam FreightStatus status) {
