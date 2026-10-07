@@ -4,8 +4,8 @@ spring:
 
   datasource:
     url: jdbc:postgresql://localhost:5432/${POSTGRES_DB}
-    username: ${POSTGRES_USER}
-    password: ${POSTGRES_PASSWORD}
+    username: ${FRETEFLOW_RUNTIME_DB_USER}
+    password: ${FRETEFLOW_RUNTIME_DB_PASSWORD}
 
   jpa:
     hibernate:
@@ -17,6 +17,9 @@ spring:
 
   flyway:
     enabled: true
+    url: jdbc:postgresql://localhost:5432/${POSTGRES_DB}
+    user: ${FRETEFLOW_MIGRATOR_DB_USER}
+    password: ${FRETEFLOW_MIGRATOR_DB_PASSWORD}
     locations: classpath:db/migration
 
 server:
