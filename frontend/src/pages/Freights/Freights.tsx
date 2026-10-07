@@ -220,7 +220,7 @@ export default function Freights() {
         </button>
       </div>
 
-      <form
+      {!showForm && !editingFreight && <form
         onSubmit={handleFilterSubmit}
         className="bg-white p-4 rounded mb-6 grid grid-cols-5 gap-3 items-end border border-ink/10"
       >
@@ -300,7 +300,7 @@ export default function Freights() {
             Filtrar
           </button>
         </div>
-      </form>
+      </form>}
 
       {actionError && (
         <div className="mb-4 px-4 py-3 bg-alert-red/10 border border-alert-red/30 rounded text-alert-red text-sm">

@@ -170,7 +170,7 @@ export default function Stores() {
         </button>
       </div>
 
-      <form
+      {!showForm && !editingStore && <form
         onSubmit={handleFilterSubmit}
         className="bg-white p-4 rounded mb-6 grid grid-cols-6 gap-3 items-end"
       >
@@ -224,7 +224,7 @@ export default function Stores() {
             Filtrar
           </button>
         </div>
-      </form>
+      </form>}
 
       {actionError && (
         <div className="mb-4 px-4 py-3 bg-alert-red/10 border border-alert-red/30 rounded text-alert-red text-sm">
