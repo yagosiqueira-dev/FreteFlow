@@ -1,8 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
-import type { User, UserRequest } from "../../types/user";
+import type {
+  User,
+  UserRegistrationRequest,
+  UserRequest,
+} from "../../types/user";
 import {
+  Plus,
   Pencil,
   Power,
   PowerOff,
@@ -13,6 +18,7 @@ import {
 } from "lucide-react";
 import {
   listUsers,
+  createUser,
   updateUser,
   deactivateUser,
   activateUser,
@@ -22,6 +28,7 @@ import {
 
 export default function Users() {
   const [page, setPage] = useState(0);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -30,6 +37,22 @@ export default function Users() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["users", page],
     queryFn: () => listUsers(page),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: createUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      setShowCreateForm(false);
+      setFormError(null);
+    },
+    onError: (err: AxiosError) => {
+      if (err.response?.status === 409) {
+        setFormError("Já existe um usuário com esse email.");
+      } else {
+        setFormError("Não foi possível criar o usuário.");
+      }
+    },
   });
 
   const updateMutation = useMutation({
@@ -99,6 +122,20 @@ export default function Users() {
     },
   });
 
+  function handleCreateSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setFormError(null);
+
+    const formData = new FormData(e.currentTarget);
+    const payload: UserRegistrationRequest = {
+      name: formData.get("name") as string,
+      email: formData.get("email") as string,
+      password: formData.get("password") as string,
+    };
+
+    createMutation.mutate(payload);
+  }
+
   function handleEditSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!editingUser) return;
@@ -119,12 +156,87 @@ export default function Users() {
         <h1 className="text-2xl font-display font-semibold text-ink">
           Usuários
         </h1>
+        <button
+          onClick={() => {
+            setEditingUser(null);
+            setShowCreateForm(true);
+            setFormError(null);
+          }}
+          className="flex items-center gap-2 px-4 py-2 bg-route-orange text-white rounded font-medium text-sm"
+        >
+          <Plus size={16} />
+          Novo usuário
+        </button>
       </div>
 
       {actionError && (
         <div className="mb-4 px-4 py-3 bg-alert-red/10 border border-alert-red/30 rounded text-alert-red text-sm">
           {actionError}
         </div>
+      )}
+
+      {showCreateForm && (
+        <form
+          onSubmit={handleCreateSubmit}
+          className="bg-white p-6 rounded mb-6 grid grid-cols-2 gap-4 max-w-xl"
+        >
+          <div className="col-span-2 flex justify-between items-center mb-2">
+            <h2 className="text-lg font-medium text-ink">Cadastrar Novo Usuário</h2>
+          </div>
+          <div className="col-span-2">
+            <label className="block text-xs text-ink/60 mb-1">Username</label>
+            <input
+              name="name"
+              autoComplete="username"
+              required
+              className="w-full border border-ink/20 px-3 py-2 rounded"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-ink/60 mb-1">E-mail</label>
+            <input
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              className="w-full border border-ink/20 px-3 py-2 rounded"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-ink/60 mb-1">Senha</label>
+            <input
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              required
+              className="w-full border border-ink/20 px-3 py-2 rounded"
+            />
+          </div>
+
+          {formError && (
+            <p className="col-span-2 text-alert-red text-sm">{formError}</p>
+          )}
+
+          <div className="col-span-2 flex gap-2 mt-2">
+            <button
+              type="button"
+              onClick={() => {
+                setShowCreateForm(false);
+                setFormError(null);
+              }}
+              className="flex-1 py-2 border border-ink/20 rounded font-medium"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={createMutation.isPending}
+              className="flex-1 py-2 bg-highway-green text-white rounded font-medium disabled:opacity-50"
+            >
+              {createMutation.isPending ? "Criando..." : "Criar usuário"}
+            </button>
+          </div>
+        </form>
       )}
 
       {editingUser && (
@@ -221,7 +333,11 @@ export default function Users() {
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       <button
-                        onClick={() => setEditingUser(user)}
+                        onClick={() => {
+                          setShowCreateForm(false);
+                          setEditingUser(user);
+                          setFormError(null);
+                        }}
                         className="text-ink/50 hover:text-asphalt"
                         title="Editar"
                       >

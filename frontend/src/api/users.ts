@@ -1,5 +1,5 @@
 import api from "./axios";
-import type { User, UserRequest } from "../types/user";
+import type { User, UserRegistrationRequest, UserRequest } from "../types/user";
 import type { PagedResponse } from "../types/vehicle";
 
 export async function listUsers(page: number = 0): Promise<PagedResponse<User>> {
@@ -7,6 +7,10 @@ export async function listUsers(page: number = 0): Promise<PagedResponse<User>> 
     params: { page },
   });
   return response.data;
+}
+
+export async function createUser(data: UserRegistrationRequest): Promise<void> {
+  await api.post<void>("/auth/register", data);
 }
 
 export async function updateUser(id: string, data: UserRequest): Promise<User> {

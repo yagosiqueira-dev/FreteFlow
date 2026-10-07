@@ -12,3 +12,9 @@ export interface UserRequest {
   name: string;
   email: string;
 }
+
+export interface UserRegistrationRequest {
+  name: string;
+  email: string;
+  password: string;
+}
