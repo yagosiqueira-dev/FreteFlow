@@ -10,6 +10,7 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldRegisterUserAsOperatorRegardlessOfRoleInPayload() throws Exception {
+        String adminToken = createAdminAndGetToken("admin-register@freteflow.com");
         String payload = """
                 {
                   "name": "Usuário Teste",
@@ -20,6 +21,7 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
                 """;
 
         mockMvc.perform(post("/auth/register")
+                        .header("Authorization", "Bearer " + adminToken)
                         .contentType("application/json")
                         .content(payload))
                 .andExpect(status().isOk());
@@ -31,6 +33,7 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldRejectRegisterWithDuplicateEmail() throws Exception {
+        String adminToken = createAdminAndGetToken("admin-duplicate@freteflow.com");
         String payload = """
                 {
                   "name": "Usuário Duplicado",
@@ -40,11 +43,13 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
                 """;
 
         mockMvc.perform(post("/auth/register")
+                        .header("Authorization", "Bearer " + adminToken)
                         .contentType("application/json")
                         .content(payload))
                 .andExpect(status().isOk());
 
         mockMvc.perform(post("/auth/register")
+                        .header("Authorization", "Bearer " + adminToken)
                         .contentType("application/json")
                         .content(payload))
                 .andExpect(status().isConflict());
@@ -52,17 +57,7 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void shouldLoginWithValidCredentialsAndReturnToken() throws Exception {
-        String registerPayload = """
-                {
-                  "name": "Usuário Login",
-                  "email": "login-teste@freteflow.com",
-                  "password": "senha123"
-                }
-                """;
-
-        mockMvc.perform(post("/auth/register")
-                .contentType("application/json")
-                .content(registerPayload));
+        createOperatorAndGetToken("login-teste@freteflow.com");
 
         String loginPayload = """
                 {
@@ -71,26 +66,21 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
                 }
                 """;
 
-        mockMvc.perform(post("/auth/login")
+        var result = mockMvc.perform(post("/auth/login")
                         .contentType("application/json")
                         .content(loginPayload))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").isNotEmpty());
+                .andExpect(jsonPath("$.token").isNotEmpty())
+                .andReturn();
+
+        String token = com.jayway.jsonpath.JsonPath.read(result.getResponse().getContentAsString(), "$.token");
+        org.assertj.core.api.Assertions.assertThat(tokenService.validateToken(token))
+                .isEqualTo("login-teste@freteflow.com");
     }
 
     @Test
     void shouldRejectLoginWithWrongPassword() throws Exception {
-        String registerPayload = """
-                {
-                  "name": "Usuário Senha Errada",
-                  "email": "senha-errada@freteflow.com",
-                  "password": "senha123"
-                }
-                """;
-
-        mockMvc.perform(post("/auth/register")
-                .contentType("application/json")
-                .content(registerPayload));
+        createOperatorAndGetToken("senha-errada@freteflow.com");
 
         String loginPayload = """
                 {
