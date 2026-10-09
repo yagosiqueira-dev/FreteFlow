@@ -133,6 +133,34 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void deactivatedUserCannotReusePreviouslyIssuedJwt() throws Exception {
+        String adminToken = createAdminAndGetToken("admin-disable-token@test.com");
+        String operatorEmail = "operator-disable-token@test.com";
+        String operatorToken = createOperatorAndGetToken(operatorEmail);
+        var operator = userRepository.findByEmail(operatorEmail).orElseThrow();
+
+        mockMvc.perform(get("/api/vehicles")
+                        .header("Authorization", "Bearer " + operatorToken))
+                .andExpect(status().isOk());
+
+        org.assertj.core.api.Assertions.assertThat(tokenService.validateToken(operatorToken))
+                .isEqualTo(operatorEmail);
+
+        mockMvc.perform(delete("/api/users/{id}", operator.getId())
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isNoContent());
+
+        org.assertj.core.api.Assertions.assertThat(userRepository.findByEmail(operatorEmail).orElseThrow().isEnabled())
+                .isFalse();
+        org.assertj.core.api.Assertions.assertThat(tokenService.validateToken(operatorToken))
+                .isEqualTo(operatorEmail);
+
+        mockMvc.perform(get("/api/vehicles")
+                        .header("Authorization", "Bearer " + operatorToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void adminCannotDeactivateSelf() throws Exception {
         String adminToken = createAdminAndGetToken("admin-user-self@test.com");
 
