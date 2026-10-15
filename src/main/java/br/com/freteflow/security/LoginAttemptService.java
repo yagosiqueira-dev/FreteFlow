@@ -16,7 +16,7 @@ import java.util.function.LongSupplier;
 @Service
 public class LoginAttemptService {
 
-    private static final int MAX_ATTEMPTS = 5;
+    private static final int MAX_TRACKED_FAILURES_PER_EMAIL = 5;
     private static final long BLOCK_DURATION_MINUTES = 15;
     static final int MAX_TRACKED_EMAILS = 10_000;
     private static final long CLEANUP_INTERVAL_MILLIS = 60_000L;
@@ -62,7 +62,7 @@ public class LoginAttemptService {
             Instant now = clock.instant();
             AttemptInfo updated = isExpired(current, now)
                     ? new AttemptInfo(1, now)
-                    : new AttemptInfo(Math.min(MAX_ATTEMPTS, current.attempts() + 1), now);
+                    : new AttemptInfo(Math.min(MAX_TRACKED_FAILURES_PER_EMAIL, current.attempts() + 1), now);
             if (attemptsByEmail.replace(key, current, updated)) {
                 return;
             }
@@ -71,31 +71,6 @@ public class LoginAttemptService {
 
     public void loginSucceeded(String email) {
         removeEntry(normalize(email));
-    }
-
-    public boolean isBlocked(String email) {
-        String key = normalize(email);
-        while (true) {
-            Instant now = clock.instant();
-            AttemptInfo info = attemptsByEmail.get(key);
-            if (info != null) {
-                if (isExpired(info, now)) {
-                    if (attemptsByEmail.replace(key, info, new AttemptInfo(0, now))) {
-                        return false;
-                    }
-                    continue;
-                }
-                return info.attempts() >= MAX_ATTEMPTS;
-            }
-
-            if (!tryAcquireEntrySlot()) {
-                return true;
-            }
-            if (attemptsByEmail.putIfAbsent(key, new AttemptInfo(0, clock.instant())) == null) {
-                return false;
-            }
-            entrySlots.release();
-        }
     }
 
     @Scheduled(fixedDelay = CLEANUP_INTERVAL_MILLIS)
@@ -140,20 +115,6 @@ public class LoginAttemptService {
         removeExpiredAttempts(clock.instant());
     }
 
-    public void loginAborted(String email) {
-        String key = normalize(email);
-        while (true) {
-            AttemptInfo current = attemptsByEmail.get(key);
-            if (current == null || current.attempts() != 0) {
-                return;
-            }
-            if (attemptsByEmail.remove(key, current)) {
-                entrySlots.release();
-                return;
-            }
-        }
-    }
-
     private void removeEntry(String key) {
         if (attemptsByEmail.remove(key) != null) {
             entrySlots.release();
@@ -166,5 +127,14 @@ public class LoginAttemptService {
 
     private boolean isExpired(AttemptInfo info, Instant now) {
         return now.isAfter(info.lastAttempt().plus(BLOCK_DURATION_MINUTES, ChronoUnit.MINUTES));
+    }
+
+    int trackedEmailCount() {
+        return attemptsByEmail.size();
+    }
+
+    int trackedFailureCount(String email) {
+        AttemptInfo info = attemptsByEmail.get(normalize(email));
+        return info == null ? 0 : info.attempts();
     }
 }

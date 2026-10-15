@@ -5,27 +5,27 @@ spring:
     name: freteflow2
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/${POSTGRES_DB}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/${POSTGRES_DB}}
     username: ${FRETEFLOW_RUNTIME_DB_USER}
     password: ${FRETEFLOW_RUNTIME_DB_PASSWORD}
 
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
 
   flyway:
     enabled: true
-    url: jdbc:postgresql://localhost:5432/${POSTGRES_DB}
+    url: ${SPRING_FLYWAY_URL:jdbc:postgresql://localhost:5432/${POSTGRES_DB}}
     user: ${FRETEFLOW_MIGRATOR_DB_USER}
     password: ${FRETEFLOW_MIGRATOR_DB_PASSWORD}
     locations: classpath:db/migration
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 api:
   security:
     token:

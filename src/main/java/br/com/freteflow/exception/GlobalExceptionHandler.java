@@ -11,6 +11,11 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.AccountExpiredException;
+import org.springframework.security.authentication.CredentialsExpiredException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import java.time.LocalDateTime;
@@ -37,9 +42,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(ex.getStatus()).body(body);
     }
 
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ErrorResponseDTO> handleBadCredentialsException(
-            BadCredentialsException ex, HttpServletRequest request) {
+    @ExceptionHandler({
+            BadCredentialsException.class,
+            AccountExpiredException.class,
+            CredentialsExpiredException.class,
+            DisabledException.class,
+            LockedException.class,
+            UsernameNotFoundException.class
+    })
+    public ResponseEntity<ErrorResponseDTO> handleAuthenticationFailure(
+            RuntimeException ex, HttpServletRequest request) {
 
         ErrorResponseDTO body = ErrorResponseDTO.of(
                 HttpStatus.UNAUTHORIZED.value(),

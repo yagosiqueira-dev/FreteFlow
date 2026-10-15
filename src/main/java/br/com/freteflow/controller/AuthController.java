@@ -5,14 +5,12 @@ import br.com.freteflow.dto.auth.LoginResponseDTO;
 import br.com.freteflow.dto.auth.RegisterDTO;
 import br.com.freteflow.entity.User;
 import br.com.freteflow.entity.UserRole;
-import br.com.freteflow.exception.TooManyLoginAttemptsException;
 import br.com.freteflow.security.LoginAttemptService;
 import br.com.freteflow.security.TokenService;
 import br.com.freteflow.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,11 +30,6 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@RequestBody LoginDTO data) {
-
-        if (loginAttemptService.isBlocked(data.email())) {
-            throw new TooManyLoginAttemptsException();
-        }
-
         try {
             var usernamePassword = new UsernamePasswordAuthenticationToken(data.email(), data.password());
             var auth = this.authenticationManager.authenticate(usernamePassword);
@@ -48,9 +41,6 @@ public class AuthController {
 
         } catch (BadCredentialsException ex) {
             loginAttemptService.loginFailed(data.email());
-            throw ex;
-        } catch (AuthenticationException ex) {
-            loginAttemptService.loginAborted(data.email());
             throw ex;
         }
     }

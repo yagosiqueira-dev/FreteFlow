@@ -8,8 +8,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class FreteflowApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(FreteflowApplication.class, args);
-	}
-
+    public static void main(String[] args) {
+        SpringApplication.run(FreteflowApplication.class, args);
+    }
 }
